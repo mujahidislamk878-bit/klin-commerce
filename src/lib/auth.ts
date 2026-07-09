@@ -12,15 +12,10 @@ export interface AuthResponse {
   message: string;
 }
 
-const emailEndpoint = import.meta.env.VITE_AUTH_EMAIL_ENDPOINT || "";
-const googleClientId =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  import.meta.env.VITE_AUTH_GOOGLE_CLIENT_ID ||
-  "";
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-// Construct redirect URL based on environment
+// Construct redirect URL based on environment or fallback to localhost
 const redirectUrl =
-  import.meta.env.VITE_AUTH_REDIRECT_URL ||
   import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
   (() => {
     try {
@@ -29,23 +24,15 @@ const redirectUrl =
       return "http://localhost:5173/auth/callback";
     }
   })();
-const resendApiKey =
-  import.meta.env.VITE_RESEND_API_KEY ||
-  import.meta.env.VITE_AUTH_RESEND_API_KEY ||
-  import.meta.env.RESEND_API_KEY ||
-  "";
-const emailFrom = import.meta.env.VITE_AUTH_EMAIL_FROM || import.meta.env.VITE_RESEND_FROM || "no-reply@yourdomain.com";
-const mongoUri = import.meta.env.VITE_MONGODB_URI || import.meta.env.MONGODB_URI || "";
-const jwtSecret = import.meta.env.VITE_JWT_SECRET || import.meta.env.JWT_SECRET || "";
+
+const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || "";
+const emailFrom = import.meta.env.VITE_RESEND_FROM || "noreply@yourdomain.com";
 
 export const authConfig = {
-  emailEndpoint,
   googleClientId,
   redirectUrl,
   resendApiKey,
   emailFrom,
-  mongoUri,
-  jwtSecret,
 };
 
 export async function initiateGoogleAuth(mode: AuthMode): Promise<AuthResponse> {

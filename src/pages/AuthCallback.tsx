@@ -10,34 +10,36 @@ export function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get the authorization code from URL params
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
         const error = params.get("error");
 
         if (error) {
           setStatus("error");
-          setMessage(`Authentication failed: ${error}`);
+          setMessage(`Google auth error: ${error}`);
+          console.error("OAuth error:", error);
           return;
         }
 
         if (!code) {
           setStatus("error");
-          setMessage("No authorization code received");
+          setMessage("No authorization code received from Google");
           return;
         }
 
-        // Exchange code for user token at backend
+        setMessage("Exchanging authorization code...");
+
+        // Call backend to exchange code for tokens and save user
         const redirectUri = `${window.location.origin}/auth/callback`;
-        const response = await fetch("/api/auth/google-callback", {
+        const response = await fetch("http://localhost:5000/api/auth/google-callback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code, redirectUri }),
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Authentication failed");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Backend error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -46,26 +48,30 @@ export function AuthCallback() {
           throw new Error(data.error || "Authentication failed");
         }
 
-        // Save user session with token
+        console.log("✓ User authenticated:", data.user.email);
+
+        // Save session to localStorage
         sessionManager.saveSession({
           userId: data.user.userId,
           email: data.user.email,
-          firstName: data.user.name.split(" ")[0],
-          lastName: data.user.name.split(" ").slice(1).join(" "),
+          firstName: data.user.name.split(" ")[0] || "User",
+          lastName: data.user.name.split(" ").slice(1).join(" ") || "",
           token: data.token,
           createdAt: Date.now(),
         });
 
         setStatus("success");
-        setMessage("Authentication successful!");
+        setMessage("Successfully authenticated!");
 
-        // Redirect to home after a short delay - will trigger onboarding flow
+        // Redirect to home after a short delay
         setTimeout(() => {
           window.location.href = "/";
         }, 1500);
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error";
+        console.error("Auth callback error:", errorMsg);
         setStatus("error");
-        setMessage(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+        setMessage(`Error: ${errorMsg}`);
       }
     };
 

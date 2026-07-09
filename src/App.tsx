@@ -10,6 +10,7 @@ import { Marquee } from "@/components/klin/Marquee";
 import { Pricing } from "@/components/klin/Pricing";
 import { FinalCTA } from "@/components/klin/FinalCTA";
 import { AuthPage } from "@/pages/AuthPage";
+import { AuthCallback } from "@/pages/AuthCallback";
 import { OnboardingWizard } from "@/pages/OnboardingWizard";
 import { SetupScreen } from "@/pages/SetupScreen";
 import { Dashboard } from "@/pages/Dashboard";
@@ -26,10 +27,19 @@ export function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showAuthCallback, setShowAuthCallback] = useState(false);
   const [userSession, setUserSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check current route
+    const path = window.location.pathname;
+    if (path === "/auth/callback") {
+      setShowAuthCallback(true);
+      setLoading(false);
+      return;
+    }
+
     // Check for existing session on mount
     const existingSession = sessionManager.getSession();
     if (existingSession) {
@@ -50,6 +60,11 @@ export function App() {
         </div>
       </div>
     );
+  }
+
+  // Show auth callback handler
+  if (showAuthCallback) {
+    return <AuthCallback />;
   }
 
   // Handle auth completion -> show onboarding and save session
