@@ -13,6 +13,7 @@ import { AuthPage } from "@/pages/AuthPage";
 import { OnboardingWizard } from "@/pages/OnboardingWizard";
 import { SetupScreen } from "@/pages/SetupScreen";
 import { Dashboard } from "@/pages/Dashboard";
+import { sessionManager, type UserSession } from "@/lib/session";
 
 // Puck touches window at module scope — load client-only.
 const Playground = lazy(() => import("@/components/klin/Playground").then((m) => ({ default: m.Playground })));
@@ -20,24 +21,66 @@ const Playground = lazy(() => import("@/components/klin/Playground").then((m) =>
 export function App() {
   const [mounted, setMounted] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [showVideo, setShowVideo] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing session on mount
+    const existingSession = sessionManager.getSession();
+    if (existingSession) {
+      setUserSession(existingSession);
+      setShowDashboard(true);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
     setMounted(true);
   }, []);
 
-  // Handle auth completion -> show onboarding
-  const handleAuthComplete = () => {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-12 w-12 border-2 border-[#0F1020]/30 border-t-[#0F1020] rounded-full animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  // Handle auth completion -> show onboarding and save session
+  const handleAuthComplete = (email?: string) => {
+    // Create session after auth
+    const newSession: UserSession = {
+      userId: `user_${Date.now()}`,
+      email: email || "user@example.com",
+      token: `token_${Date.now()}`,
+      createdAt: Date.now(),
+    };
+    sessionManager.saveSession(newSession);
+    setUserSession(newSession);
+
     setShowAuth(false);
     setShowOnboarding(true);
   };
 
   // Handle onboarding completion -> show setup
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = (data?: Record<string, string>) => {
+    // Update session with onboarding data
+    if (userSession && data) {
+      const updatedSession: UserSession = {
+        ...userSession,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      };
+      sessionManager.saveSession(updatedSession);
+      setUserSession(updatedSession);
+    }
+
     setShowOnboarding(false);
     setShowSetup(true);
   };
@@ -48,8 +91,10 @@ export function App() {
     setShowDashboard(true);
   };
 
-  // Handle dashboard logout -> back to landing
+  // Handle dashboard logout -> back to landing and clear session
   const handleLogout = () => {
+    sessionManager.clearSession();
+    setUserSession(null);
     setShowDashboard(false);
     setShowAuth(false);
     setShowOnboarding(false);
@@ -90,9 +135,13 @@ export function App() {
           <LenisProvider>
             <main>
               <Hero
+                isAuthenticated={!!userSession}
                 onGetStarted={(mode) => {
                   setAuthMode(mode);
                   setShowAuth(true);
+                }}
+                onContinueToDashboard={() => {
+                  setShowDashboard(true);
                 }}
                 onWatchVideo={() => setShowVideo(true)}
               />
@@ -130,9 +179,13 @@ export function App() {
       ) : (
         <main>
           <Hero
+            isAuthenticated={!!userSession}
             onGetStarted={(mode) => {
               setAuthMode(mode);
               setShowAuth(true);
+            }}
+            onContinueToDashboard={() => {
+              setShowDashboard(true);
             }}
             onWatchVideo={() => setShowVideo(true)}
           />

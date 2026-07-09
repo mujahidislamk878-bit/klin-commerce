@@ -25,7 +25,7 @@ const testimonials = [
   },
 ];
 
-export function AuthPage({ initialMode = "login", onAuthComplete }: { initialMode?: "login" | "signup"; onAuthComplete?: () => void }) {
+export function AuthPage({ initialMode = "login", onAuthComplete }: { initialMode?: "login" | "signup"; onAuthComplete?: (email?: string) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -56,9 +56,9 @@ export function AuthPage({ initialMode = "login", onAuthComplete }: { initialMod
         setFeedback(`${response.provider} auth initiated`);
         setEmail("");
         setPassword("");
-        // Call onAuthComplete after a short delay
+        // Call onAuthComplete after a short delay with email
         setTimeout(() => {
-          onAuthComplete?.();
+          onAuthComplete?.(email);
         }, 500);
       } else {
         setFeedback(response.message || "Authentication failed");

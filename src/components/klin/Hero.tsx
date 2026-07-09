@@ -4,11 +4,13 @@ import { MagneticButton } from "./MagneticButton";
 import { motion } from "framer-motion";
 
 type HeroProps = {
+  isAuthenticated?: boolean;
   onGetStarted?: (mode: "login" | "signup") => void;
+  onContinueToDashboard?: () => void;
   onWatchVideo?: () => void;
 };
 
-export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
+export function Hero({ isAuthenticated = false, onGetStarted, onContinueToDashboard, onWatchVideo }: HeroProps) {
   return (
     <section className="relative w-full overflow-hidden bg-white px-0 py-0 ">
       <div className="relative w-full overflow-hidden">
@@ -39,10 +41,10 @@ export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => onGetStarted?.("signup")}
+                  onClick={() => isAuthenticated ? onContinueToDashboard?.() : onGetStarted?.("login")}
                   className="rounded-full border border-[#0F1020]/10 bg-[#0F1020] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#171A30]"
                 >
-                  Get Started
+                  {isAuthenticated ? "Continue to Dashboard" : "Get Started"}
                 </button>
                 <button
                   type="button"
@@ -71,7 +73,9 @@ export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
                   </p>
 
                   <div className="flex flex-wrap gap-4 pt-4">
-                    <MagneticButton onClick={() => onGetStarted?.("signup")}>Start building</MagneticButton>
+                    <MagneticButton onClick={() => isAuthenticated ? onContinueToDashboard?.() : onGetStarted?.("login")}>
+                      {isAuthenticated ? "Go to Dashboard" : "Start building"}
+                    </MagneticButton>
                     <MagneticButton variant="ghost">
                       <ArrowRight className="mr-2 h-4 w-4" />
                       View templates

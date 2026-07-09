@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { sessionManager } from "@/lib/session";
 
 export function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -26,14 +27,42 @@ export function AuthCallback() {
           return;
         }
 
-        // Exchange code for token (would normally be done server-side)
+        // Exchange code for user token at backend
+        const redirectUri = `${window.location.origin}/auth/callback`;
+        const response = await fetch("/api/auth/google-callback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, redirectUri }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Authentication failed");
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Authentication failed");
+        }
+
+        // Save user session with token
+        sessionManager.saveSession({
+          userId: data.user.userId,
+          email: data.user.email,
+          firstName: data.user.name.split(" ")[0],
+          lastName: data.user.name.split(" ").slice(1).join(" "),
+          token: data.token,
+          createdAt: Date.now(),
+        });
+
         setStatus("success");
         setMessage("Authentication successful!");
 
-        // Redirect to onboarding after a short delay
+        // Redirect to home after a short delay - will trigger onboarding flow
         setTimeout(() => {
           window.location.href = "/";
-        }, 2000);
+        }, 1500);
       } catch (error) {
         setStatus("error");
         setMessage(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -44,7 +73,7 @@ export function AuthCallback() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F1020] to-[#1A1F35] flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#F9FAFB] flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -56,28 +85,28 @@ export function AuthCallback() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="w-12 h-12 border-2 border-white/30 border-t-white rounded-full"
+                className="w-12 h-12 border-2 border-[#0F1020]/30 border-t-[#0F1020] rounded-full"
               />
             </div>
-            <p className="text-white text-lg">{message}</p>
+            <p className="text-[#0F1020] text-lg">{message}</p>
           </>
         )}
 
         {status === "success" && (
           <>
             <div className="text-5xl">✓</div>
-            <p className="text-white text-lg">{message}</p>
-            <p className="text-white/60 text-sm">Redirecting...</p>
+            <p className="text-[#0F1020] text-lg">{message}</p>
+            <p className="text-[#0F1020]/60 text-sm">Redirecting...</p>
           </>
         )}
 
         {status === "error" && (
           <>
             <div className="text-5xl">✕</div>
-            <p className="text-white text-lg">{message}</p>
+            <p className="text-[#0F1020] text-lg">{message}</p>
             <button
               onClick={() => (window.location.href = "/")}
-              className="mt-4 px-6 py-2 bg-white text-[#0F1020] rounded-lg font-semibold hover:bg-white/90 transition"
+              className="mt-4 px-6 py-2 bg-[#0F1020] text-white rounded-lg font-semibold hover:bg-[#171A30] transition"
             >
               Go Back
             </button>
