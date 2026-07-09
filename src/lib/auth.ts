@@ -27,12 +27,14 @@ const redirectUrl =
 
 const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || "";
 const emailFrom = import.meta.env.VITE_RESEND_FROM || "noreply@yourdomain.com";
+const emailEndpoint = import.meta.env.VITE_AUTH_EMAIL_ENDPOINT || "";
 
 export const authConfig = {
   googleClientId,
   redirectUrl,
   resendApiKey,
   emailFrom,
+  emailEndpoint,
 };
 
 export async function initiateGoogleAuth(mode: AuthMode): Promise<AuthResponse> {

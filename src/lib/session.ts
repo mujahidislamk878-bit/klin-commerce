@@ -4,6 +4,7 @@ export type UserSession = {
   email: string;
   firstName?: string;
   lastName?: string;
+  onboarding?: boolean;
   token: string;
   createdAt: number;
 };

@@ -108,7 +108,7 @@ export async function createOrUpdateUser(googleUserInfo: GoogleUserInfo): Promis
       },
       { returnDocument: "after" }
     );
-    return result.value as User;
+    return ((result as any)?.value || result) as any as User;
   }
 
   // Create new user

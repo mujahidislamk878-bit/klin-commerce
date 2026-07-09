@@ -21,36 +21,94 @@ const Playground = lazy(() => import("@/components/klin/Playground").then((m) =>
 
 export function App() {
   const [mounted, setMounted] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [showVideo, setShowVideo] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [showAuthCallback, setShowAuthCallback] = useState(false);
   const [userSession, setUserSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, "", path);
+    setCurrentPath(path);
+  };
 
   useEffect(() => {
-    // Check current route
-    const path = window.location.pathname;
-    if (path === "/auth/callback") {
-      setShowAuthCallback(true);
-      setLoading(false);
-      return;
-    }
-
-    // Check for existing session on mount
-    const existingSession = sessionManager.getSession();
-    if (existingSession) {
-      setUserSession(existingSession);
-      setShowDashboard(true);
-      setLoading(false);
-    } else {
-      setLoading(false);
-    }
-    setMounted(true);
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  useEffect(() => {
+    // Validate session on mount
+    const validateSession = async () => {
+      const existingSession = sessionManager.getSession();
+      if (existingSession) {
+        setUserSession(existingSession);
+        
+        // Verify token with backend to get fresh onboarding status
+        try {
+          const res = await fetch("http://localhost:5000/api/auth/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: existingSession.token }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.user) {
+              const updatedSession = {
+                ...existingSession,
+                onboarding: !!data.user.onboarding,
+              };
+              sessionManager.saveSession(updatedSession);
+              setUserSession(updatedSession);
+            }
+          } else {
+            // Token invalid or expired
+            sessionManager.clearSession();
+            setUserSession(null);
+          }
+        } catch (e) {
+          console.error("Token verification failed, relying on local session", e);
+        }
+      }
+      setLoading(false);
+      setMounted(true);
+    };
+
+    if (window.location.pathname === "/auth/callback") {
+      setLoading(false);
+      setMounted(true);
+    } else {
+      validateSession();
+    }
+  }, []);
+
+  // Route protection and redirection
+  useEffect(() => {
+    if (loading || !mounted || currentPath === "/auth/callback") return;
+
+    if (!userSession) {
+      // Guest users
+      if (currentPath !== "/" && currentPath !== "/auth") {
+        navigateTo("/auth");
+      }
+    } else {
+      // Authenticated users
+      const hasCompletedOnboarding = !!userSession.onboarding;
+
+      if (!hasCompletedOnboarding) {
+        if (currentPath !== "/onboarding" && currentPath !== "/setup") {
+          navigateTo("/onboarding");
+        }
+      } else {
+        if (currentPath === "/" || currentPath === "/auth" || currentPath === "/onboarding") {
+          navigateTo("/dashboard/home");
+        }
+      }
+    }
+  }, [currentPath, userSession, loading, mounted]);
 
   if (loading) {
     return (
@@ -63,82 +121,115 @@ export function App() {
   }
 
   // Show auth callback handler
-  if (showAuthCallback) {
+  if (currentPath === "/auth/callback") {
     return <AuthCallback />;
   }
 
   // Handle auth completion -> show onboarding and save session
   const handleAuthComplete = (email?: string) => {
-    // Create session after auth
     const newSession: UserSession = {
       userId: `user_${Date.now()}`,
       email: email || "user@example.com",
       token: `token_${Date.now()}`,
+      onboarding: false,
       createdAt: Date.now(),
     };
     sessionManager.saveSession(newSession);
     setUserSession(newSession);
-
-    setShowAuth(false);
-    setShowOnboarding(true);
+    navigateTo("/onboarding");
   };
 
   // Handle onboarding completion -> show setup
-  const handleOnboardingComplete = (data?: Record<string, string>) => {
-    // Update session with onboarding data
-    if (userSession && data) {
+  const handleOnboardingComplete = async (data?: Record<string, string>) => {
+    if (userSession) {
       const updatedSession: UserSession = {
         ...userSession,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        onboarding: true,
       };
+      if (data) {
+        updatedSession.firstName = data.firstName;
+        updatedSession.lastName = data.lastName;
+      }
       sessionManager.saveSession(updatedSession);
       setUserSession(updatedSession);
-    }
 
-    setShowOnboarding(false);
-    setShowSetup(true);
+      // Save onboarding data to DB
+      try {
+        await fetch("http://localhost:5000/api/user/onboarding", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userSession.token}`,
+          },
+          body: JSON.stringify({ 
+            token: userSession.token,
+            ...data
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to persist onboarding state in DB:", err);
+      }
+    }
+    navigateTo("/setup");
   };
 
   // Handle setup completion -> show dashboard
   const handleSetupComplete = () => {
-    setShowSetup(false);
-    setShowDashboard(true);
+    navigateTo("/dashboard/home");
   };
 
   // Handle dashboard logout -> back to landing and clear session
   const handleLogout = () => {
     sessionManager.clearSession();
     setUserSession(null);
-    setShowDashboard(false);
-    setShowAuth(false);
-    setShowOnboarding(false);
-    setShowSetup(false);
+    navigateTo("/");
   };
 
-  // Show onboarding wizard
-  if (showOnboarding) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
-  }
-
-  // Show setup screen
-  if (showSetup) {
-    return <SetupScreen onComplete={handleSetupComplete} />;
-  }
-
-  // Show dashboard
-  if (showDashboard) {
-    return <Dashboard onLogout={handleLogout} />;
-  }
-
-  // Show auth page (modified to call handler on complete)
-  if (showAuth) {
+  // Route rendering
+  if (currentPath === "/auth") {
     return (
       <AuthPage
         initialMode={authMode}
         onAuthComplete={handleAuthComplete}
       />
     );
+  }
+
+  if (currentPath === "/onboarding") {
+    if (!userSession) {
+      return (
+        <AuthPage
+          initialMode="login"
+          onAuthComplete={handleAuthComplete}
+        />
+      );
+    }
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
+
+  if (currentPath === "/setup") {
+    if (!userSession) {
+      return (
+        <AuthPage
+          initialMode="login"
+          onAuthComplete={handleAuthComplete}
+        />
+      );
+    }
+    return <SetupScreen onComplete={handleSetupComplete} />;
+  }
+
+  if (currentPath.startsWith("/dashboard")) {
+    if (!userSession) {
+      return (
+        <AuthPage
+          initialMode="login"
+          onAuthComplete={handleAuthComplete}
+        />
+      );
+    }
+    const tab = currentPath.split("/")[2] || "home";
+    return <Dashboard onLogout={handleLogout} activeTab={tab} onNavigate={navigateTo} user={userSession} />;
   }
 
   return (
@@ -153,10 +244,10 @@ export function App() {
                 isAuthenticated={!!userSession}
                 onGetStarted={(mode) => {
                   setAuthMode(mode);
-                  setShowAuth(true);
+                  navigateTo("/auth");
                 }}
                 onContinueToDashboard={() => {
-                  setShowDashboard(true);
+                  navigateTo("/dashboard/home");
                 }}
                 onWatchVideo={() => setShowVideo(true)}
               />
@@ -179,7 +270,7 @@ export function App() {
                   type="button"
                   onClick={() => {
                     setAuthMode("signup");
-                    setShowAuth(true);
+                    navigateTo("/auth");
                   }}
                   className="rounded-full bg-[#0F1020] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#171A30]"
                 >
@@ -197,10 +288,10 @@ export function App() {
             isAuthenticated={!!userSession}
             onGetStarted={(mode) => {
               setAuthMode(mode);
-              setShowAuth(true);
+              navigateTo("/auth");
             }}
             onContinueToDashboard={() => {
-              setShowDashboard(true);
+              navigateTo("/dashboard/home");
             }}
             onWatchVideo={() => setShowVideo(true)}
           />

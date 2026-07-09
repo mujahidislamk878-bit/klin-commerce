@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { sessionManager } from "@/lib/session";
+import { FloatingBlobs, GrainOverlay } from "@/components/klin/FloatingBlobs";
+import { Sparkles, Check, AlertCircle } from "lucide-react";
 
 export function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -56,6 +58,7 @@ export function AuthCallback() {
           email: data.user.email,
           firstName: data.user.name.split(" ")[0] || "User",
           lastName: data.user.name.split(" ").slice(1).join(" ") || "",
+          onboarding: !!data.user.onboarding,
           token: data.token,
           createdAt: Date.now(),
         });
@@ -79,45 +82,78 @@ export function AuthCallback() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-[#F9FAFB] flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#F9FAFB] text-[#0F1020] flex items-center justify-center relative overflow-hidden">
+      <FloatingBlobs />
+      <GrainOverlay />
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="text-center space-y-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md relative z-10 mx-4"
       >
-        {status === "loading" && (
-          <>
-            <div className="flex justify-center mb-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="w-12 h-12 border-2 border-[#0F1020]/30 border-t-[#0F1020] rounded-full"
-              />
+        <div className="rounded-[32px] border border-black/5 bg-white shadow-[0_20px_80px_-20px_rgba(15,16,32,0.15)] p-8 md:p-10 text-center space-y-6">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="h-10 w-10 bg-gradient-to-br from-[#0F1020] to-[#0F1020]/70 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-extrabold text-lg">K</span>
             </div>
-            <p className="text-[#0F1020] text-lg">{message}</p>
-          </>
-        )}
+            <span className="font-semibold text-[#0F1020] text-xl tracking-wide">Klin</span>
+          </div>
 
-        {status === "success" && (
-          <>
-            <div className="text-5xl">✓</div>
-            <p className="text-[#0F1020] text-lg">{message}</p>
-            <p className="text-[#0F1020]/60 text-sm">Redirecting...</p>
-          </>
-        )}
+          <div className="py-6 flex flex-col items-center justify-center space-y-4">
+            {status === "loading" && (
+              <>
+                <div className="relative w-16 h-16 mb-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-purple-500"
+                  />
+                  <div className="absolute inset-2 rounded-full border border-black/5 bg-[#FAFBFC]" />
+                </div>
+                <h3 className="text-xl font-bold tracking-tight text-[#0F1020]">{message}</h3>
+                <p className="text-sm text-[#0F1020]/60">Validating credentials with Google...</p>
+              </>
+            )}
 
-        {status === "error" && (
-          <>
-            <div className="text-5xl">✕</div>
-            <p className="text-[#0F1020] text-lg">{message}</p>
-            <button
-              onClick={() => (window.location.href = "/")}
-              className="mt-4 px-6 py-2 bg-[#0F1020] text-white rounded-lg font-semibold hover:bg-[#171A30] transition"
-            >
-              Go Back
-            </button>
-          </>
-        )}
+            {status === "success" && (
+              <>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-2"
+                >
+                  <Check className="h-8 w-8" />
+                </motion.div>
+                <h3 className="text-xl font-bold tracking-tight text-[#0F1020]">{message}</h3>
+                <p className="text-sm text-[#0F1020]/60 flex items-center justify-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  Preparing your workspace...
+                </p>
+              </>
+            )}
+
+            {status === "error" && (
+              <>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-2"
+                >
+                  <AlertCircle className="h-8 w-8" />
+                </motion.div>
+                <h3 className="text-xl font-bold tracking-tight text-[#0F1020]">Sign In Failed</h3>
+                <p className="text-sm text-red-500/80 px-4">{message}</p>
+                <button
+                  onClick={() => (window.location.href = "/")}
+                  className="mt-6 w-full h-11 rounded-lg bg-[#0F1020] hover:bg-[#171A30] text-white text-sm font-semibold transition"
+                >
+                  Return to Sign In
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </motion.div>
     </div>
   );
