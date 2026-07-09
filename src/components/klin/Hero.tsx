@@ -54,7 +54,7 @@ export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
               </div>
             </header>
 
-            <main className="mx-auto flex flex-1 w-full max-w-[1200px] items-start px-6 pb-0 pt-2 md:px-10">
+            <main className="mx-auto flex flex-1 w-full max-w-[1200px] items-center justify-start px-6 py-12 md:px-10">
               <div className="max-w-3xl space-y-6 text-white">
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
