@@ -3,7 +3,12 @@ import { ArrowRight } from "lucide-react";
 import { MagneticButton } from "./MagneticButton";
 import { motion } from "framer-motion";
 
-export function Hero() {
+type HeroProps = {
+  onGetStarted?: (mode: "login" | "signup") => void;
+  onWatchVideo?: () => void;
+};
+
+export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
   return (
     <section className="relative w-full overflow-hidden bg-white px-0 py-0 ">
       <div className="relative w-full overflow-hidden">
@@ -32,10 +37,18 @@ export function Hero() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <button className="rounded-full border border-white/70 bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 hover:bg-slate-100">
+                <button
+                  type="button"
+                  onClick={() => onGetStarted?.("signup")}
+                  className="rounded-full border border-[#0F1020]/10 bg-[#0F1020] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#171A30]"
+                >
                   Get Started
                 </button>
-                <button className="rounded-full border border-white/70 bg-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/50">
+                <button
+                  type="button"
+                  onClick={() => onWatchVideo?.()}
+                  className="rounded-full border border-white/70 bg-white/95 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                >
                   Watch Video
                 </button>
               </div>
