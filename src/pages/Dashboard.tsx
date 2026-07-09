@@ -34,6 +34,8 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import type { UserSession } from "@/lib/session";
 import { FloatingBlobs, GrainOverlay } from "@/components/klin/FloatingBlobs";
 import { Input } from "@/components/ui/input";
+import { TemplatePreviewModal } from "@/components/klin/TemplatePreviewModal";
+import { WebsiteWizard } from "@/pages/WebsiteWizard";
 
 type DashboardProps = {
   onLogout?: () => void;
@@ -57,6 +59,15 @@ export function Dashboard({ onLogout, activeTab, onNavigate, user }: DashboardPr
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Wizard and Preview modal states
+  const [activePreviewTemplate, setActivePreviewTemplate] = useState<any>(null);
+  const [activeWizardTemplate, setActiveWizardTemplate] = useState<any>(null);
+  const [installingTemplate, setInstallingTemplate] = useState(false);
+
+  const handleCreateTemplateVisually = () => {
+    window.location.href = "/playground?templateId=new";
+  };
 
   // Fetch data for the active tab from MongoDB database
   useEffect(() => {
@@ -652,9 +663,18 @@ export function Dashboard({ onLogout, activeTab, onNavigate, user }: DashboardPr
                   {/* TEMPLATES TAB */}
                   {activeTab === "templates" && (
                     <div className="space-y-6">
-                      <div>
-                        <h1 className="text-2xl font-bold">Klin Templates</h1>
-                        <p className="text-[#0F1020]/50 text-xs mt-1">Pre-styled templates saved in MongoDB. Edit or launch templates instantly.</p>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h1 className="text-2xl font-bold">Klin Templates</h1>
+                          <p className="text-[#0F1020]/50 text-xs mt-1">Pre-styled templates saved in MongoDB. Edit or launch templates instantly.</p>
+                        </div>
+                        <button
+                          onClick={handleCreateTemplateVisually}
+                          className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 transition text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md font-sans"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Create Template
+                        </button>
                       </div>
 
                       {/* Templates Grid */}
@@ -679,8 +699,8 @@ export function Dashboard({ onLogout, activeTab, onNavigate, user }: DashboardPr
                                 <span>{tpl.downloads} Downloads</span>
                               </div>
                               <button
-                                onClick={() => handleInstallTemplate(tpl.name)}
-                                className="w-full mt-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] transition font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-sm"
+                                onClick={() => setActivePreviewTemplate(tpl)}
+                                className="w-full mt-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] transition font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-sm font-sans"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                                 Install Template
@@ -1304,6 +1324,45 @@ export function Dashboard({ onLogout, activeTab, onNavigate, user }: DashboardPr
           </AnimatePresence>
         </main>
       </div>
+      {activePreviewTemplate && (
+        <TemplatePreviewModal
+          template={activePreviewTemplate}
+          onClose={() => setActivePreviewTemplate(null)}
+          isInstalling={installingTemplate}
+          onInstall={async () => {
+            if (installingTemplate) return;
+            setInstallingTemplate(true);
+            try {
+              const res = await fetch("http://localhost:5000/api/websites/wizard-create", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${user?.token}`
+                },
+                body: JSON.stringify({
+                  templateId: activePreviewTemplate.name,
+                  websiteName: `${activePreviewTemplate.name} Shop`,
+                  subdomain: `${activePreviewTemplate.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Math.random().toString(36).substring(2, 6)}`,
+                  businessName: "Klin Merchant",
+                  industry: "Fashion"
+                })
+              });
+              const result = await res.json();
+              if (result.success && result.website) {
+                setActivePreviewTemplate(null);
+                onNavigate(`/dashboard/websites/${result.website.websiteId}`);
+              } else {
+                alert("Clone failed: " + result.error);
+              }
+            } catch (err: any) {
+              console.error("Direct install failed", err);
+              alert("Failed to install template");
+            } finally {
+              setInstallingTemplate(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

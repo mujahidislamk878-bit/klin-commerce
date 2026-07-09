@@ -82,99 +82,118 @@ async function seedDatabase() {
 
   // Seed Templates
   const templatesCol = database.collection("templates");
-  const hasRichTemplates = await templatesCol.findOne({ pages: { $exists: true } });
-  if (!hasRichTemplates) {
+  const hasKlinShopTemplate = await templatesCol.findOne({ name: "Klin Premium Storefront", version: "1.2.0" });
+  if (!hasKlinShopTemplate) {
     await templatesCol.deleteMany({});
     const defaultTemplates = [
       {
-        name: "Aura Creative Portfolio",
-        category: "Portfolio",
-        thumbnail: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&q=80",
-        downloads: 1420,
-        rating: 4.8,
-        description: "A dark theme minimal portfolio for digital creators.",
-        theme: {
-          colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#3b82f6", background: "#0F1020", foreground: "#ffffff" },
-          radii: { sm: "4px", md: "8px", lg: "16px" },
-          fonts: { body: "Inter", heading: "Outfit" },
-          shadows: { sm: "0 1px 2px rgba(0,0,0,0.05)" }
-        },
-        pages: [
-          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
-          { title: "About", slug: "about", builderJson: { content: [], root: {} } },
-          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
-          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
-        ],
-        navigation: [
-          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "About", href: "/about" }] },
-          { name: "Footer Menu", links: [{ label: "Contact", href: "/contact" }] }
-        ],
-        seo: { title: "Aura Creative Portfolio", description: "Design meets creativity.", keywords: ["portfolio", "design", "creative"] },
-        settings: { subdomain: "aura-portfolio", customDomain: "" }
-      },
-      {
-        name: "Apex SaaS Platform",
-        category: "SaaS",
-        thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80",
-        downloads: 890,
-        rating: 4.9,
-        description: "High-conversion product layout with charts.",
-        theme: {
-          colors: { primary: "#4f46e5", secondary: "#f8fafc", accent: "#4f46e5", background: "#ffffff", foreground: "#0f172a" },
-          radii: { sm: "6px", md: "12px", lg: "24px" },
-          fonts: { body: "Inter", heading: "Inter" },
-          shadows: { sm: "0 4px 6px -1px rgba(0,0,0,0.1)" }
-        },
-        pages: [
-          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
-          { title: "Features", slug: "features", builderJson: { content: [], root: {} } },
-          { title: "Pricing", slug: "pricing", builderJson: { content: [], root: {} } },
-          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
-          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
-        ],
-        navigation: [
-          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "Features", href: "/features" }, { label: "Pricing", href: "/pricing" }] },
-          { name: "Footer Menu", links: [{ label: "Contact", href: "/contact" }] }
-        ],
-        seo: { title: "Apex SaaS Platform", description: "Scale your analytics today.", keywords: ["saas", "dashboard", "analytics"] },
-        settings: { subdomain: "apex-saas", customDomain: "" }
-      },
-      {
-        name: "Nova E-Commerce Store",
+        name: "Klin Premium Storefront",
+        templateId: "klin-premium-storefront",
+        author: "Klin Core Team",
+        version: "1.2.0",
+        minKlinVersion: "3.5.0",
+        compatibility: { builder: "v3", themeEngine: "v2", commerce: "v1", cms: "v1" },
         category: "E-Commerce",
         thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80",
-        downloads: 2310,
-        rating: 4.7,
-        description: "Clean store template with filter and checkout interfaces.",
+        downloads: 4820,
+        rating: 4.9,
+        description: "Premium high-conversion storefront utilizing storefront blocks.",
         theme: {
-          colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#4f46e5", background: "#ffffff", foreground: "#000000" },
-          radii: { sm: "4px", md: "8px", lg: "16px" },
+          colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#6366F1", background: "#ffffff", foreground: "#0F1020" },
+          radii: { sm: "4px", md: "12px", lg: "24px" },
           fonts: { body: "Inter", heading: "Outfit" },
-          shadows: { sm: "0 1px 2px rgba(0,0,0,0.05)" }
+          shadows: { sm: "0 4px 20px rgba(0,0,0,0.05)" }
         },
         pages: [
-          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
-          { title: "Products", slug: "products", builderJson: { content: [], root: {} } },
-          { title: "Collections", slug: "collections", builderJson: { content: [], root: {} } },
-          { title: "Product Details", slug: "product-details", builderJson: { content: [], root: {} } },
-          { title: "About", slug: "about", builderJson: { content: [], root: {} } },
-          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
-          { title: "Cart", slug: "cart", builderJson: { content: [], root: {} } },
-          { title: "Checkout", slug: "checkout", builderJson: { content: [], root: {} } },
-          { title: "Privacy", slug: "privacy", builderJson: { content: [], root: {} } },
-          { title: "Terms", slug: "terms", builderJson: { content: [], root: {} } },
-          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
+          {
+            title: "Home",
+            slug: "home",
+            builderJson: {
+              content: [
+                {
+                  type: "Navbar",
+                  props: {
+                    id: "nav-shop",
+                    brand: "Klin Storefront"
+                  }
+                },
+                {
+                  type: "Hero",
+                  props: {
+                    id: "hero-shop",
+                    eyebrow: "Limited Edition Drop",
+                    title: "Minimalist Goods for Modern Life",
+                    sub: "Curated essentials designed with attention to detail. Free delivery worldwide.",
+                    cta: "Explore Catalog",
+                    bg: "#0B0C10",
+                    ink: "#FFFFFF",
+                    accent: "#6366F1"
+                  }
+                },
+                {
+                  type: "DiscountBanner",
+                  props: {
+                    id: "promo-shop",
+                    code: "KLINSPRING20",
+                    percentOff: 20,
+                    theme: "dark"
+                  }
+                },
+                {
+                  type: "ProductShowcase",
+                  props: {
+                    id: "showcase-shop",
+                    productId: "p_1",
+                    titleOverride: "Premium Leather Sneakers",
+                    showPrice: true,
+                    accentColor: "#6366F1"
+                  }
+                },
+                {
+                  type: "ProductGrid",
+                  props: {
+                    id: "grid-shop",
+                    limit: 3,
+                    columns: "3",
+                    showBorder: true
+                  }
+                },
+                {
+                  type: "Testimonials",
+                  props: {
+                    id: "test-shop",
+                    quote: "Klin's products have redefined the meaning of premium simplicity in my daily wardrobe.",
+                    author: "Marcus Sterling, Creative Director",
+                    bg: "#FAFBFC",
+                    ink: "#0F1020"
+                  }
+                },
+                {
+                  type: "Footer",
+                  props: {
+                    id: "foot-shop",
+                    brand: "Klin Premium Storefront"
+                  }
+                }
+              ],
+              root: {
+                props: {
+                  title: "Klin Premium Storefront"
+                }
+              }
+            }
+          }
         ],
         navigation: [
-          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "Products", href: "/products" }] },
-          { name: "Footer Menu", links: [{ label: "About", href: "/about" }, { label: "Contact", href: "/contact" }] }
+          { name: "Header Menu", links: [{ label: "Home", href: "/home" }] },
+          { name: "Footer Menu", links: [{ label: "Home", href: "/home" }] }
         ],
-        seo: { title: "Nova E-Commerce Store", description: "Modern catalog store.", keywords: ["store", "ecommerce", "klin"] },
-        settings: { subdomain: "nova-store", customDomain: "" }
+        seo: { title: "Klin Premium Storefront", description: "Design meets commerce.", keywords: ["storefront", "ecommerce", "klin"] },
+        settings: { subdomain: "klin-storefront", customDomain: "" }
       }
     ];
     await templatesCol.insertMany(defaultTemplates);
-    console.log("✓ Seeded default templates with rich pages and themes");
+    console.log("✓ Seeded custom E-Commerce Storefront template successfully");
   }
 
   // Seed Payments
@@ -382,7 +401,14 @@ app.post("/api/auth/verify", async (req: Request, res: Response) => {
     }
 
     if (token.startsWith("token_")) {
-      const mockUser = (mockUsersDb as any)[token] || { onboarding: false };
+      const db = await connectDB();
+      let mockUser: any = null;
+      if (db) {
+        mockUser = await db.db("Klin").collection("users").findOne({ googleId: token });
+      }
+      if (!mockUser) {
+        mockUser = (mockUsersDb as any)[token] || { onboarding: false };
+      }
       return res.json({
         success: true,
         user: {
@@ -391,7 +417,7 @@ app.post("/api/auth/verify", async (req: Request, res: Response) => {
           name: mockUser.firstName ? `${mockUser.firstName} ${mockUser.lastName || ""}` : "Mock User",
           firstName: mockUser.firstName || "",
           lastName: mockUser.lastName || "",
-          onboarding: mockUser.onboarding
+          onboarding: !!mockUser.onboarding
         }
       });
     }
@@ -448,6 +474,26 @@ app.post("/api/user/onboarding", authenticateToken, async (req: Request, res: Re
         occupations,
         teamSize
       };
+      const db = await connectDB();
+      if (db) {
+        await db.db("Klin").collection("users").updateOne(
+          { googleId: verified.userId },
+          { 
+            $set: { 
+              googleId: verified.userId,
+              onboarding: true, 
+              firstName, 
+              lastName, 
+              companyName, 
+              businessType, 
+              occupations, 
+              teamSize,
+              updatedAt: new Date() 
+            } 
+          },
+          { upsert: true }
+        );
+      }
       return res.json({ success: true });
     }
     const db = await connectDB();
@@ -551,6 +597,125 @@ app.get("/api/dashboard/templates", authenticateToken, async (req: Request, res:
     res.json({ success: true, templates });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to fetch templates" });
+  }
+});
+
+// POST /api/templates/submit
+app.post("/api/templates/submit", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      templateId,
+      category,
+      thumbnail,
+      description,
+      theme,
+      pages,
+      navigation,
+      seo,
+      settings,
+      author,
+      version,
+      minKlinVersion,
+      compatibility
+    } = req.body;
+
+    if (!name || !pages || pages.length === 0) {
+      return res.status(400).json({ success: false, error: "Template name and pages content are required" });
+    }
+
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const templatesCol = db.db("Klin").collection("templates");
+
+    const finalTemplateId = templateId || name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+    const newTemplate = {
+      name,
+      templateId: finalTemplateId,
+      category: category || "General",
+      thumbnail: thumbnail || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400",
+      description: description || "Custom template layout uploaded by a creator.",
+      downloads: 0,
+      rating: 5.0,
+      theme: theme || {
+        colors: { primary: "#6366F1", secondary: "#FAFBFC", accent: "#6366F1", background: "#ffffff", foreground: "#0F1020" },
+        radii: { sm: "4px", md: "12px", lg: "24px" },
+        fonts: { body: "Inter", heading: "Outfit" },
+        shadows: { sm: "0 4px 20px rgba(0,0,0,0.05)" }
+      },
+      pages: pages.map((page: any) => ({
+        title: page.title || "Home",
+        slug: page.slug || "home",
+        builderJson: page.builderJson || { content: [], root: {} }
+      })),
+      navigation: navigation || [
+        { name: "Header Menu", links: [{ label: "Home", href: "/home" }] },
+        { name: "Footer Menu", links: [{ label: "Home", href: "/home" }] }
+      ],
+      seo: seo || { title: name, description },
+      settings: settings || { subdomain: finalTemplateId },
+      author: author || "Klin Creator",
+      version: version || "1.0.0",
+      minKlinVersion: minKlinVersion || "3.5.0",
+      compatibility: compatibility || { builder: "v3", themeEngine: "v2", commerce: "v1", cms: "v1" },
+      createdAt: new Date()
+    };
+
+    await templatesCol.updateOne(
+      { templateId: finalTemplateId },
+      { $set: newTemplate },
+      { upsert: true }
+    );
+
+    res.json({ success: true, message: `Template '${name}' uploaded successfully.`, template: newTemplate });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to submit template" });
+  }
+});
+
+// GET /api/templates/:id
+app.get("/api/templates/:id", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const templateId = req.params.id;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const { ObjectId } = require("mongodb");
+    let template = null;
+    try {
+      template = await db.db("Klin").collection("templates").findOne({ _id: new ObjectId(templateId) });
+    } catch (e) {}
+    if (!template) {
+      template = await db.db("Klin").collection("templates").findOne({ templateId });
+    }
+    if (!template) return res.status(404).json({ success: false, error: "Template not found" });
+    res.json({ success: true, template });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/templates/:id/save
+app.post("/api/templates/:id/save", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const templateId = req.params.id;
+    const { pages } = req.body;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const { ObjectId } = require("mongodb");
+    
+    let query: any = { templateId };
+    try {
+      query = { $or: [{ _id: new ObjectId(templateId) }, { templateId }] };
+    } catch(e) {}
+
+    await db.db("Klin").collection("templates").updateOne(
+      query,
+      { $set: { pages, lastEdited: new Date() } }
+    );
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -739,259 +904,23 @@ app.post("/api/dashboard/settings", authenticateToken, async (req: Request, res:
   }
 });
 
-// ── WEBSITE LIFECYCLE ENDPOINTS ──
+// ── MOUNT DECOUPLED BACKEND ROUTES ──
+import websiteRoutes from "./backend/routes/website.routes";
+import previewRoutes from "./backend/routes/preview.routes";
+import rendererRoutes from "./backend/routes/renderer.routes";
+import publishRoutes from "./backend/routes/publish.routes";
+import deploymentRoutes from "./backend/routes/deployment.routes";
+import activityRoutes from "./backend/routes/activity.routes";
+import seoRoutes from "./backend/routes/seo.routes";
 
-// Get list of user websites
-app.get("/api/dashboard/websites", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const verified = (req as any).user;
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const websites = await db.db("Klin").collection("websites").find({ userId: verified.userId }).toArray();
-    res.json({ success: true, websites });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to fetch websites" });
-  }
-});
+app.use("/api", websiteRoutes);
+app.use("/api", previewRoutes);
+app.use("/api", rendererRoutes);
+app.use("/api", publishRoutes);
+app.use("/api", deploymentRoutes);
+app.use("/api", activityRoutes);
+app.use(seoRoutes);
 
-// Install Template -> Clone Website Instance
-app.post("/api/websites/install", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const verified = (req as any).user;
-    const { templateId } = req.body;
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const database = db.db("Klin");
-
-    // Find template (try both ObjectId and string name match)
-    let template: any = null;
-    try {
-      const { ObjectId } = require("mongodb");
-      template = await database.collection("templates").findOne({ _id: new ObjectId(templateId) });
-    } catch (e) {
-      // Fallback to name/string search
-    }
-    if (!template) {
-      template = await database.collection("templates").findOne({ name: templateId });
-    }
-    if (!template) {
-      template = await database.collection("templates").findOne({}); // Fallback to first available template
-    }
-
-    if (!template) {
-      return res.status(404).json({ success: false, error: "Template not found" });
-    }
-
-    const websiteId = `web_${Math.random().toString(36).substring(2, 11)}`;
-
-    // Clone pages, navigation, theme, builder JSON, SEO, settings
-    const clonedWebsite = {
-      websiteId,
-      userId: verified.userId,
-      workspaceId: `workspace_${verified.userId}`,
-      name: `My ${template.name}`,
-      templateName: template.name,
-      status: "Draft", // draft | published | archived
-      lastEdited: new Date(),
-      theme: template.theme || { colors: {}, radii: {}, fonts: {}, shadows: {} },
-      pages: template.pages || [],
-      navigation: template.navigation || [],
-      seo: template.seo || { title: template.name, description: "" },
-      settings: {
-        subdomain: `${template.settings?.subdomain || "my-site"}-${Math.random().toString(36).substring(2, 6)}`,
-        customDomain: ""
-      },
-      createdAt: new Date()
-    };
-
-    // Save MongoDB
-    await database.collection("websites").insertOne(clonedWebsite);
-    res.json({ success: true, website: clonedWebsite });
-  } catch (error) {
-    console.error("Install template failed:", error);
-    res.status(500).json({ success: false, error: "Failed to clone template to website" });
-  }
-});
-
-// Get single website
-app.get("/api/websites/:id", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const website = await db.db("Klin").collection("websites").findOne({ websiteId: req.params.id });
-    if (!website) return res.status(404).json({ success: false, error: "Website not found" });
-    res.json({ success: true, website });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to get website" });
-  }
-});
-
-// Update website
-app.post("/api/websites/:id/update", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { name, theme, pages, navigation, seo, settings, status } = req.body;
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    
-    const updateFields: any = { lastEdited: new Date() };
-    if (name !== undefined) updateFields.name = name;
-    if (theme !== undefined) updateFields.theme = theme;
-    if (pages !== undefined) updateFields.pages = pages;
-    if (navigation !== undefined) updateFields.navigation = navigation;
-    if (seo !== undefined) updateFields.seo = seo;
-    if (settings !== undefined) updateFields.settings = settings;
-    if (status !== undefined) updateFields.status = status;
-
-    await db.db("Klin").collection("websites").updateOne(
-      { websiteId: req.params.id },
-      { $set: updateFields }
-    );
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to update website" });
-  }
-});
-
-// Duplicate website
-app.post("/api/websites/:id/duplicate", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const database = db.db("Klin");
-    
-    const original = await database.collection("websites").findOne({ websiteId: req.params.id });
-    if (!original) return res.status(404).json({ success: false, error: "Website not found" });
-
-    const newId = `web_${Math.random().toString(36).substring(2, 11)}`;
-    const duplicate = {
-      ...original,
-      _id: undefined, // Let MongoDB generate new _id
-      websiteId: newId,
-      name: `${original.name} (Copy)`,
-      status: "Draft",
-      settings: {
-        ...original.settings,
-        subdomain: `${original.settings?.subdomain || "my-site"}-copy`
-      },
-      createdAt: new Date(),
-      lastEdited: new Date()
-    };
-
-    await database.collection("websites").insertOne(duplicate);
-    res.json({ success: true, website: duplicate });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to duplicate website" });
-  }
-});
-
-// Archive website
-app.post("/api/websites/:id/archive", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    await db.db("Klin").collection("websites").updateOne(
-      { websiteId: req.params.id },
-      { $set: { status: "Archived", lastEdited: new Date() } }
-    );
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to archive website" });
-  }
-});
-
-// Delete website
-app.delete("/api/websites/:id", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    await db.db("Klin").collection("websites").deleteOne({ websiteId: req.params.id });
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to delete website" });
-  }
-});
-
-// Publish website -> Create Snapshot
-app.post("/api/websites/:id/publish", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const verified = (req as any).user;
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const database = db.db("Klin");
-
-    const website = await database.collection("websites").findOne({ websiteId: req.params.id });
-    if (!website) return res.status(404).json({ success: false, error: "Website not found" });
-
-    // Create snapshot
-    const snapshot = {
-      snapshotId: `snap_${Math.random().toString(36).substring(2, 11)}`,
-      websiteId: req.params.id,
-      pages: website.pages,
-      theme: website.theme,
-      navigation: website.navigation,
-      seo: website.seo,
-      timestamp: new Date(),
-      createdBy: verified.email
-    };
-
-    await database.collection("website_snapshots").insertOne(snapshot);
-
-    // Update publish state
-    await database.collection("websites").updateOne(
-      { websiteId: req.params.id },
-      { $set: { status: "Published", lastEdited: new Date() } }
-    );
-
-    res.json({ success: true, snapshot });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to publish website" });
-  }
-});
-
-// List snapshots
-app.get("/api/websites/:id/snapshots", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const snapshots = await db.db("Klin").collection("website_snapshots")
-      .find({ websiteId: req.params.id })
-      .sort({ timestamp: -1 })
-      .toArray();
-    res.json({ success: true, snapshots });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to fetch snapshots" });
-  }
-});
-
-// Restore snapshot
-app.post("/api/websites/:id/snapshots/restore", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { snapshotId } = req.body;
-    const db = await connectDB();
-    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
-    const database = db.db("Klin");
-
-    const snapshot = await database.collection("website_snapshots").findOne({ snapshotId });
-    if (!snapshot) return res.status(404).json({ success: false, error: "Snapshot not found" });
-
-    await database.collection("websites").updateOne(
-      { websiteId: req.params.id },
-      {
-        $set: {
-          pages: snapshot.pages,
-          theme: snapshot.theme,
-          navigation: snapshot.navigation,
-          seo: snapshot.seo,
-          lastEdited: new Date()
-        }
-      }
-    );
-
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Failed to restore snapshot" });
-  }
-});
 
 // 404 handler
 app.use((req: Request, res: Response) => {

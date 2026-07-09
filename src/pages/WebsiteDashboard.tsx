@@ -16,11 +16,21 @@ import {
   Settings,
   History,
   FileCode,
-  Layers
+  Layers,
+  Clock,
+  FolderOpen,
+  Image as ImageIcon,
+  Film,
+  Type,
+  FileUp,
+  RotateCcw,
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react";
 import type { UserSession } from "@/lib/session";
 import { FloatingBlobs, GrainOverlay } from "@/components/klin/FloatingBlobs";
 import { Input } from "@/components/ui/input";
+import { WebsitePreview } from "./WebsitePreview";
 
 type WebsiteDashboardProps = {
   websiteId: string;
@@ -34,68 +44,127 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
   const [error, setError] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("overview");
 
-  // Local state for forms
+  // Local state for settings subdivision
+  const [activeSettingSection, setActiveSettingSection] = useState("general");
+
+  // Local state for simulator preview
+  const [showLivePreviewSimulator, setShowLivePreviewSimulator] = useState(false);
+
+  // Lists states
   const [pages, setPages] = useState<any[]>([]);
   const [navigation, setNavigation] = useState<any[]>([]);
   const [theme, setTheme] = useState<any>({ colors: {} });
   const [seo, setSeo] = useState<any>({ title: "", description: "", keywords: [] });
-  const [settings, setSettings] = useState<any>({ subdomain: "", customDomain: "" });
-  const [snapshots, setSnapshots] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({ subdomain: "", customDomain: "", localization: {} });
+  const [deployments, setDeployments] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  
+  // Publish Validation Issues
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
+
+  // Asset folder view
+  const [selectedAssetFolder, setSelectedAssetFolder] = useState<"images" | "videos" | "fonts" | "svg" | "documents">("images");
+
+  // Mock Assets data structure
+  const [assetsList, setAssetsList] = useState({
+    images: [
+      { name: "hero-bg.jpg", size: "1.2 MB", url: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8" },
+      { name: "logo-dark.png", size: "45 KB", url: "https://placehold.co/150x50" }
+    ],
+    videos: [
+      { name: "product-tour.mp4", size: "18.5 MB", url: "/assets/hero-bg.mp4" }
+    ],
+    fonts: [
+      { name: "InstrumentSerif-Regular.woff2", size: "82 KB", url: "#" },
+      { name: "Inter-Variable.woff2", size: "140 KB", url: "#" }
+    ],
+    svg: [
+      { name: "chevron-right.svg", size: "1.2 KB", url: "#" },
+      { name: "shopping-bag.svg", size: "2.4 KB", url: "#" }
+    ],
+    documents: [
+      { name: "privacy-policy.pdf", size: "320 KB", url: "#" }
+    ]
+  });
 
   // Page Creator Modal
   const [showPageModal, setShowPageModal] = useState(false);
   const [newPageTitle, setNewPageTitle] = useState("");
   const [newPageSlug, setNewPageSlug] = useState("");
 
-  useEffect(() => {
-    if (!user?.token || !websiteId) return;
-
-    const fetchWebsiteData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`http://localhost:5000/api/websites/${websiteId}`, {
-          headers: { "Authorization": `Bearer ${user.token}` }
-        });
-        if (!res.ok) throw new Error("Failed to load website configuration");
-        const result = await res.json();
-        if (result.success) {
-          setWebsite(result.website);
-          setPages(result.website.pages || []);
-          setNavigation(result.website.navigation || []);
-          setTheme(result.website.theme || { colors: {} });
-          setSeo(result.website.seo || { title: "", description: "" });
-          setSettings(result.website.settings || { subdomain: "", customDomain: "" });
-        } else {
-          throw new Error(result.error || "Failed to load website");
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to retrieve details");
-      } finally {
-        setLoading(false);
+  const fetchWebsiteData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:5000/api/websites/${websiteId}`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load website configuration");
+      const result = await res.json();
+      if (result.success) {
+        setWebsite(result.website);
+        setPages(result.website.pages || []);
+        setNavigation(result.website.navigation || []);
+        setTheme(result.website.theme || { colors: {} });
+        setSeo(result.website.seo || { title: "", description: "" });
+        setSettings(result.website.settings || { subdomain: "", customDomain: "", localization: {} });
+      } else {
+        throw new Error(result.error || "Failed to load website");
       }
-    };
+    } catch (err: any) {
+      setError(err.message || "Failed to retrieve details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchWebsiteData();
+  useEffect(() => {
+    if (user?.token && websiteId) {
+      fetchWebsiteData();
+    }
   }, [websiteId, user?.token]);
 
-  // Fetch snapshots
-  useEffect(() => {
-    if (!user?.token || activeSubTab !== "deployments") return;
-    const fetchSnapshots = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/snapshots`, {
-          headers: { "Authorization": `Bearer ${user.token}` }
-        });
-        const result = await res.json();
-        if (result.success) {
-          setSnapshots(result.snapshots || []);
-        }
-      } catch (e) {
-        console.error(e);
+  // Fetch deployments
+  const fetchDeployments = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/deployments`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
+      const result = await res.json();
+      if (result.success) {
+        setDeployments(result.deployments || []);
       }
-    };
-    fetchSnapshots();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.token && activeSubTab === "deployments") {
+      fetchDeployments();
+    }
+  }, [websiteId, activeSubTab, user?.token]);
+
+  // Fetch activities
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/activity`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
+      const result = await res.json();
+      if (result.success) {
+        setActivities(result.activities || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.token && activeSubTab === "activity") {
+      fetchActivities();
+    }
   }, [websiteId, activeSubTab, user?.token]);
 
   const handleUpdateWebsite = async (updatedData: any) => {
@@ -117,17 +186,73 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
     }
   };
 
+  const handleSaveSettingsSection = async (section: string, payload: any) => {
+    if (!user?.token) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/settings/${section}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        alert(`${section.toUpperCase()} settings saved successfully.`);
+        fetchWebsiteData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handlePublish = async () => {
     if (!user?.token) return;
+    setPublishing(true);
+    setValidationIssues([]);
     try {
       const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/publish`, {
         method: "POST",
-        headers: { "Authorization": `Bearer ${user.token}` }
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ environment: "Production" })
       });
       const result = await res.json();
       if (result.success) {
-        alert("Website published successfully! Cloned snapshot created.");
-        setWebsite((prev: any) => ({ ...prev, status: "Published" }));
+        alert("Website published successfully! Static snapshot deployed.");
+        fetchWebsiteData();
+      } else {
+        if (result.issues) {
+          setValidationIssues(result.issues);
+        } else {
+          alert("Publish failed: " + result.error);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleRollback = async (snapshotId: string) => {
+    if (!user?.token) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/deployments/rollback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ snapshotId })
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert("Rollback trigger initiated successfully! Restored snapshots.");
+        fetchWebsiteData();
+        fetchDeployments();
       }
     } catch (e) {
       console.error(e);
@@ -192,6 +317,10 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
     await handleUpdateWebsite({ theme: updatedTheme });
   };
 
+  if (showLivePreviewSimulator) {
+    return <WebsitePreview websiteId={websiteId} onBack={() => setShowLivePreviewSimulator(false)} />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white to-[#F9FAFB] text-[#0F1020] flex items-center justify-center relative overflow-hidden">
@@ -229,7 +358,9 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
     { id: "pages", label: "Pages", icon: FileText },
     { id: "navigation", label: "Navigation", icon: Compass },
     { id: "theme", label: "Theme", icon: Palette },
+    { id: "assets", label: "Assets", icon: FolderOpen },
     { id: "seo", label: "SEO & Meta", icon: Globe },
+    { id: "activity", label: "Activity Logs", icon: Clock },
     { id: "deployments", label: "Deployments", icon: History },
     { id: "settings", label: "Settings", icon: Settings }
   ];
@@ -303,23 +434,39 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      window.open(`http://${website.settings?.subdomain}.klin.store`, "_blank");
-                    }}
+                    onClick={() => setShowLivePreviewSimulator(true)}
                     className="px-4 py-2 bg-black/5 hover:bg-black/10 transition text-xs font-semibold rounded-xl flex items-center gap-1.5"
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    Live Preview
+                    Preview Simulator
                   </button>
                   <button
                     onClick={handlePublish}
-                    className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] transition text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm"
+                    disabled={publishing}
+                    className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] transition text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50"
                   >
-                    <Send className="h-3.5 w-3.5" />
+                    {publishing ? (
+                      <div className="w-3.5 h-3.5 border border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
                     Publish Changes
                   </button>
                 </div>
               </div>
+
+              {validationIssues.length > 0 && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-2xl space-y-2 text-xs">
+                  <span className="font-bold flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" /> Publishing Blocked (Validation Failures)
+                  </span>
+                  <ul className="list-disc pl-4 space-y-1">
+                    {validationIssues.map((issue, idx) => (
+                      <li key={idx}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Bento Grid Info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -327,7 +474,7 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
                   <span className="text-[10px] uppercase font-mono tracking-widest text-[#0F1020]/40">Status</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${website.status === 'Published' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                    <h3 className="text-lg font-bold">{website.status}</h3>
+                    <h3 className="text-lg font-bold">{website.status || "Draft"}</h3>
                   </div>
                 </div>
 
@@ -504,6 +651,84 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
             </div>
           )}
 
+          {/* ASSETS MANAGER TAB */}
+          {activeSubTab === "assets" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold">Asset Manager</h1>
+                  <p className="text-[#0F1020]/50 text-xs mt-1">Directory of media structures mapped to Cloudinary storage.</p>
+                </div>
+                <button
+                  onClick={() => alert("Simulated asset file upload triggered.")}
+                  className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] transition text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm"
+                >
+                  <FileUp className="h-3.5 w-3.5" />
+                  Upload Asset
+                </button>
+              </div>
+
+              {/* Sub folder headers */}
+              <div className="flex gap-2 border-b border-black/5 pb-3">
+                {([
+                  { id: "images", label: "Images", icon: ImageIcon },
+                  { id: "videos", label: "Videos", icon: Film },
+                  { id: "fonts", label: "Fonts", icon: Type },
+                  { id: "svg", label: "SVGs", icon: FileText },
+                  { id: "documents", label: "Docs", icon: FileText }
+                ] as const).map((fol) => {
+                  const Icon = fol.icon;
+                  return (
+                    <button
+                      key={fol.id}
+                      onClick={() => setSelectedAssetFolder(fol.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                        selectedAssetFolder === fol.id ? "bg-black/5 text-[#0F1020]" : "text-[#0F1020]/50 hover:text-black"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {fol.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Assets Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {assetsList[selectedAssetFolder]?.map((asset: any, idx: number) => (
+                  <div key={idx} className="p-4 bg-white border border-black/5 rounded-[20px] shadow-sm flex flex-col justify-between h-40">
+                    <div className="space-y-1.5">
+                      <div className="h-16 w-full rounded-lg bg-black/5 overflow-hidden flex items-center justify-center text-black/30 font-mono text-[9px]">
+                        {selectedAssetFolder === "images" ? (
+                          <img src={asset.url} alt={asset.name} className="h-full w-full object-cover" />
+                        ) : selectedAssetFolder === "videos" ? (
+                          <Film className="h-6 w-6" />
+                        ) : selectedAssetFolder === "fonts" ? (
+                          <Type className="h-6 w-6" />
+                        ) : <FileText className="h-6 w-6" />}
+                      </div>
+                      <h4 className="text-xs font-bold truncate mt-2">{asset.name}</h4>
+                      <p className="text-[10px] text-black/40 font-mono">{asset.size}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const updated = { ...assetsList };
+                        updated[selectedAssetFolder].splice(idx, 1);
+                        setAssetsList(updated);
+                      }}
+                      className="text-red-500 hover:text-red-700 text-[10px] font-bold text-right pt-2"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+                {assetsList[selectedAssetFolder]?.length === 0 && (
+                  <div className="col-span-4 py-16 text-center text-[#0F1020]/40 text-xs">This directory is empty.</div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* SEO TAB */}
           {activeSubTab === "seo" && (
             <div className="max-w-2xl p-6 rounded-[24px] bg-white border border-black/5 shadow-sm space-y-6">
@@ -544,6 +769,44 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
             </div>
           )}
 
+          {/* ACTIVITY LOGS TAB */}
+          {activeSubTab === "activity" && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold">Activity Logs</h1>
+                <p className="text-[#0F1020]/50 text-xs mt-1">Chronological history index of workspace operations.</p>
+              </div>
+
+              <div className="bg-white border border-black/5 shadow-sm rounded-[24px] overflow-hidden text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-black/5 text-[#0F1020]/40 font-mono">
+                      <th className="p-4">Activity Event</th>
+                      <th className="p-4">Action Description</th>
+                      <th className="p-4">Author</th>
+                      <th className="p-4 text-right">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activities.map((act) => (
+                      <tr key={act.activityId} className="border-b border-black/5 hover:bg-black/[0.01]">
+                        <td className="p-4 font-bold text-indigo-600">{act.type}</td>
+                        <td className="p-4 text-[#0F1020]/80">{act.description}</td>
+                        <td className="p-4 font-mono font-medium">{act.user}</td>
+                        <td className="p-4 text-right text-[#0F1020]/40">{new Date(act.timestamp).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    {activities.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-[#0F1020]/40">No activity logs recorded yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* DEPLOYMENTS & SNAPSHOTS TAB */}
           {activeSubTab === "deployments" && (
             <div className="space-y-6">
@@ -556,50 +819,41 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-black/5 text-[#0F1020]/40 font-mono">
-                      <th className="p-4">Snapshot ID</th>
-                      <th className="p-4">Published By</th>
-                      <th className="p-4">Timestamp</th>
+                      <th className="p-4">Deployment ID</th>
+                      <th className="p-4">Snapshot Version</th>
+                      <th className="p-4">Environment</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Duration</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {snapshots.map((snap) => (
-                      <tr key={snap.snapshotId} className="border-b border-black/5 hover:bg-black/[0.01]">
-                        <td className="p-4 font-mono font-semibold text-blue-600">{snap.snapshotId}</td>
-                        <td className="p-4 font-bold">{snap.createdBy}</td>
-                        <td className="p-4 text-[#0F1020]/50">{new Date(snap.timestamp).toLocaleString()}</td>
+                    {deployments.map((dep) => (
+                      <tr key={dep.deploymentId} className="border-b border-black/5 hover:bg-black/[0.01]">
+                        <td className="p-4 font-mono font-semibold text-blue-600">{dep.deploymentId}</td>
+                        <td className="p-4 font-mono text-black/50">{dep.snapshotVersion}</td>
+                        <td className="p-4 font-bold text-indigo-600">{dep.environment}</td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-0.5 rounded-full font-semibold text-[10px] ${
+                            dep.status === "Published" ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-500/10 text-blue-600"
+                          }`}>
+                            {dep.status}
+                          </span>
+                        </td>
+                        <td className="p-4 font-mono">{dep.duration}s</td>
                         <td className="p-4 text-right">
                           <button
-                            onClick={async () => {
-                              if (confirm("Restore website components to this version?")) {
-                                try {
-                                  const res = await fetch(`http://localhost:5000/api/websites/${websiteId}/snapshots/restore`, {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                      "Authorization": `Bearer ${user?.token}`
-                                    },
-                                    body: JSON.stringify({ snapshotId: snap.snapshotId })
-                                  });
-                                  if (res.ok) {
-                                    alert("Snapshot restored! Reloading...");
-                                    window.location.reload();
-                                  }
-                                } catch (e) {
-                                  console.error(e);
-                                }
-                              }
-                            }}
-                            className="px-3 py-1 bg-[#0F1020] text-white hover:bg-[#171A30] transition rounded-lg text-[10px]"
+                            onClick={() => handleRollback(dep.snapshotVersion)}
+                            className="px-3 py-1.5 bg-[#0F1020] text-white hover:bg-[#171A30] transition rounded-lg text-[10px] flex items-center gap-1 ml-auto"
                           >
-                            Restore
+                            <RotateCcw className="h-3 w-3" /> Rollback
                           </button>
                         </td>
                       </tr>
                     ))}
-                    {snapshots.length === 0 && (
+                    {deployments.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="py-12 text-center text-[#0F1020]/40">No deployment snapshots created. Click publish to create one!</td>
+                        <td colSpan={6} className="py-12 text-center text-[#0F1020]/40">No deployment logs created yet. Click publish to deploy one!</td>
                       </tr>
                     )}
                   </tbody>
@@ -610,42 +864,158 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
 
           {/* SETTINGS TAB */}
           {activeSubTab === "settings" && (
-            <div className="max-w-2xl p-6 rounded-[24px] bg-white border border-black/5 shadow-sm space-y-6">
+            <div className="space-y-6">
               <div>
-                <h3 className="text-base font-bold border-b border-black/5 pb-3">Subdomain & DNS Parameters</h3>
+                <h1 className="text-2xl font-bold">Settings Expansion</h1>
+                <p className="text-[#0F1020]/50 text-xs mt-1">Split workspace and DNS routing setups into focused channels.</p>
               </div>
 
-              <div className="space-y-4 text-xs">
-                <div className="space-y-1.5">
-                  <label className="font-mono text-[#0F1020]/50">Klin Subdomain Name</label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={settings.subdomain}
-                      onChange={(e) => {
-                        const nextSettings = { ...settings, subdomain: e.target.value };
-                        setSettings(nextSettings);
-                        handleUpdateWebsite({ settings: nextSettings });
-                      }}
-                      className="flex-1 px-4 py-2 bg-[#FAFBFC] border border-black/10 rounded-xl"
-                    />
-                    <span className="py-2.5 font-semibold text-[#0F1020]/60">.klin.store</span>
-                  </div>
+              <div className="flex gap-4">
+                {/* Left side setting subtabs */}
+                <div className="w-48 bg-white/50 border border-black/5 rounded-[20px] p-3 flex flex-col gap-1 h-fit">
+                  {([
+                    { id: "general", label: "General" },
+                    { id: "branding", label: "Branding" },
+                    { id: "localization", label: "Localization" },
+                    { id: "domains", label: "Domains" }
+                  ]).map((sect) => (
+                    <button
+                      key={sect.id}
+                      onClick={() => setActiveSettingSection(sect.id)}
+                      className={`text-xs font-semibold px-3 py-2 text-left rounded-lg transition ${
+                        activeSettingSection === sect.id ? "bg-black/5 text-[#0F1020]" : "text-[#0F1020]/50 hover:text-black"
+                      }`}
+                    >
+                      {sect.label}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-mono text-[#0F1020]/50">Custom External Domain Target</label>
-                  <Input
-                    type="text"
-                    value={settings.customDomain}
-                    onChange={(e) => {
-                      const nextSettings = { ...settings, customDomain: e.target.value };
-                      setSettings(nextSettings);
-                      handleUpdateWebsite({ settings: nextSettings });
-                    }}
-                    placeholder="e.g. store.mydomain.com"
-                    className="w-full px-4 py-2 bg-[#FAFBFC] border border-black/10 rounded-xl"
-                  />
+                {/* Right side forms */}
+                <div className="flex-1 bg-white border border-black/5 rounded-[24px] p-6 shadow-sm">
+                  {activeSettingSection === "general" && (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.target as any;
+                      handleSaveSettingsSection("general", {
+                        websiteName: form.websiteName.value,
+                        websiteDescription: form.websiteDescription.value,
+                        supportEmail: form.supportEmail.value,
+                        supportPhone: form.supportPhone.value,
+                      });
+                    }} className="space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Store Title Name</label>
+                        <Input name="websiteName" type="text" defaultValue={website.metadata?.websiteName || website.name} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Store Description</label>
+                        <textarea 
+                          name="websiteDescription" 
+                          rows={3} 
+                          className="w-full bg-[#FAFBFC] border border-black/10 rounded-xl p-3 focus:outline-none"
+                          defaultValue={website.metadata?.websiteDescription || ""} 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Customer Support Email</label>
+                        <Input name="supportEmail" type="email" defaultValue={website.metadata?.supportEmail || user?.email} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Support Phone</label>
+                        <Input name="supportPhone" type="text" defaultValue={website.metadata?.supportPhone || ""} />
+                      </div>
+                      <button type="submit" className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] font-bold rounded-xl">
+                        Save General settings
+                      </button>
+                    </form>
+                  )}
+
+                  {activeSettingSection === "branding" && (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.target as any;
+                      handleSaveSettingsSection("branding", {
+                        logo: form.logo.value,
+                        favicon: form.favicon.value,
+                        themeStyle: form.themeStyle.value,
+                      });
+                    }} className="space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Branding Logo Link</label>
+                        <Input name="logo" type="text" defaultValue={website.metadata?.logo || ""} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Favicon Shortcut Icon</label>
+                        <Input name="favicon" type="text" defaultValue={website.metadata?.favicon || ""} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Layout Design Theme Style</label>
+                        <select name="themeStyle" defaultValue={settings.themeStyle || "modern"} className="w-full bg-[#FAFBFC] border border-black/10 rounded-xl p-3">
+                          <option value="modern">Modern Sleek</option>
+                          <option value="minimal">Minimalist Light</option>
+                          <option value="glass">Glassmorphic</option>
+                        </select>
+                      </div>
+                      <button type="submit" className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] font-bold rounded-xl">
+                        Save Branding settings
+                      </button>
+                    </form>
+                  )}
+
+                  {activeSettingSection === "localization" && (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.target as any;
+                      handleSaveSettingsSection("localization", {
+                        currency: form.currency.value,
+                        language: form.language.value,
+                        timezone: form.timezone.value,
+                      });
+                    }} className="space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Default Currency</label>
+                        <Input name="currency" type="text" defaultValue={settings.localization?.currency || "USD"} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Primary Language Code</label>
+                        <Input name="language" type="text" defaultValue={settings.localization?.language || "en"} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Local Timezone</label>
+                        <Input name="timezone" type="text" defaultValue={settings.localization?.timezone || "UTC"} />
+                      </div>
+                      <button type="submit" className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] font-bold rounded-xl">
+                        Save Localization settings
+                      </button>
+                    </form>
+                  )}
+
+                  {activeSettingSection === "domains" && (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.target as any;
+                      handleSaveSettingsSection("domains", {
+                        subdomain: form.subdomain.value,
+                        customDomain: form.customDomain.value,
+                      });
+                    }} className="space-y-4 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Klin subdomain</label>
+                        <div className="flex gap-2">
+                          <Input name="subdomain" type="text" defaultValue={settings.subdomain || ""} />
+                          <span className="py-2.5 font-bold font-mono text-[#0F1020]/50 text-xs">.klin.store</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-semibold text-black/75">Custom Domain Mapping</label>
+                        <Input name="customDomain" type="text" placeholder="store.domain.com" defaultValue={settings.customDomain || ""} />
+                      </div>
+                      <button type="submit" className="px-4 py-2 bg-[#0F1020] text-white hover:bg-[#171A30] font-bold rounded-xl">
+                        Save Domains settings
+                      </button>
+                    </form>
+                  )}
                 </div>
               </div>
             </div>
@@ -662,7 +1032,7 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border border-black/5 shadow-2xl rounded-[32px] max-w-sm w-full p-6 space-y-4"
+              className="bg-white border border-black/5 shadow-2xl rounded-[32px] max-w-sm w-full p-6 space-y-4 text-[#0F1020]"
             >
               <h3 className="text-base font-bold">Add Custom Page</h3>
 
@@ -711,3 +1081,4 @@ export function WebsiteDashboard({ websiteId, user, onNavigate }: WebsiteDashboa
     </div>
   );
 }
+export default WebsiteDashboard;

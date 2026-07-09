@@ -17,6 +17,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { WebsiteDashboard } from "@/pages/WebsiteDashboard";
 import { PlaygroundPage } from "@/pages/PlaygroundPage";
 import { LogoutPage } from "@/pages/LogoutPage";
+import { WebsiteLiveViewer } from "@/pages/WebsiteLiveViewer";
 import { sessionManager, type UserSession } from "@/lib/session";
 
 // Puck touches window at module scope — load client-only.
@@ -90,7 +91,7 @@ export function App() {
 
   // Route protection and redirection
   useEffect(() => {
-    if (loading || !mounted || currentPath === "/auth/callback" || currentPath === "/logout") return;
+    if (loading || !mounted || currentPath === "/auth/callback" || currentPath === "/logout" || currentPath.startsWith("/site/")) return;
 
     if (!userSession) {
       // Guest users
@@ -193,6 +194,13 @@ export function App() {
   };
 
   // Route rendering
+  if (currentPath.startsWith("/site/")) {
+    const parts = currentPath.split("/");
+    const subdomain = parts[2];
+    const pageSlug = parts[3] || "home";
+    return <WebsiteLiveViewer subdomain={subdomain} pageSlug={pageSlug} />;
+  }
+
   if (currentPath === "/auth") {
     return (
       <AuthPage

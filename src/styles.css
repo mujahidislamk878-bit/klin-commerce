@@ -123,3 +123,30 @@
   overflow: hidden;
 }
 .klin-puck-root .Puck { border-radius: 24px; }
+
+/* Custom sizing overrides for Puck canvas preview area */
+.custom-puck-editor {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.custom-puck-editor [class*="Puck-Preview"],
+.custom-puck-editor [class*="Puck-Canvas"],
+.custom-puck-editor [class*="puck-canvas"],
+.custom-puck-editor [class*="Puck-Frame"] {
+  max-width: var(--puck-canvas-width, 100%) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  transition: max-width 0.3s ease-in-out !important;
+  border-left: 1px solid rgba(0,0,0,0.08) !important;
+  border-right: 1px solid rgba(0,0,0,0.08) !important;
+  background-color: #ffffff !important;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+
