@@ -72,7 +72,7 @@ export function AuthPage({ initialMode = "login", onAuthComplete }: { initialMod
   };
 
   const handleGoogle = () => {
-    initiateGoogleAuth(mode);
+    initiateGoogleAuth("login");
     // Call onAuthComplete for Google flow
     setTimeout(() => {
       onAuthComplete?.();
