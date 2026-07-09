@@ -10,6 +10,9 @@ import { Marquee } from "@/components/klin/Marquee";
 import { Pricing } from "@/components/klin/Pricing";
 import { FinalCTA } from "@/components/klin/FinalCTA";
 import { AuthPage } from "@/pages/AuthPage";
+import { OnboardingWizard } from "@/pages/OnboardingWizard";
+import { SetupScreen } from "@/pages/SetupScreen";
+import { Dashboard } from "@/pages/Dashboard";
 
 // Puck touches window at module scope — load client-only.
 const Playground = lazy(() => import("@/components/klin/Playground").then((m) => ({ default: m.Playground })));
@@ -19,13 +22,63 @@ export function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const [showVideo, setShowVideo] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Handle auth completion -> show onboarding
+  const handleAuthComplete = () => {
+    setShowAuth(false);
+    setShowOnboarding(true);
+  };
+
+  // Handle onboarding completion -> show setup
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    setShowSetup(true);
+  };
+
+  // Handle setup completion -> show dashboard
+  const handleSetupComplete = () => {
+    setShowSetup(false);
+    setShowDashboard(true);
+  };
+
+  // Handle dashboard logout -> back to landing
+  const handleLogout = () => {
+    setShowDashboard(false);
+    setShowAuth(false);
+    setShowOnboarding(false);
+    setShowSetup(false);
+  };
+
+  // Show onboarding wizard
+  if (showOnboarding) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
+
+  // Show setup screen
+  if (showSetup) {
+    return <SetupScreen onComplete={handleSetupComplete} />;
+  }
+
+  // Show dashboard
+  if (showDashboard) {
+    return <Dashboard onLogout={handleLogout} />;
+  }
+
+  // Show auth page (modified to call handler on complete)
   if (showAuth) {
-    return <AuthPage initialMode={authMode} />;
+    return (
+      <AuthPage
+        initialMode={authMode}
+        onAuthComplete={handleAuthComplete}
+      />
+    );
   }
 
   return (

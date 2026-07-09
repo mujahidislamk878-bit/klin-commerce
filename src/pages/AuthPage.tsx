@@ -25,7 +25,7 @@ const testimonials = [
   },
 ];
 
-export function AuthPage({ initialMode = "signup" }: { initialMode?: "login" | "signup" }) {
+export function AuthPage({ initialMode = "signup", onAuthComplete }: { initialMode?: "login" | "signup"; onAuthComplete?: () => void }) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,6 +72,10 @@ export function AuthPage({ initialMode = "signup" }: { initialMode?: "login" | "
         setEmail("");
         setPassword("");
         setFullName("");
+        // Call onAuthComplete after a short delay
+        setTimeout(() => {
+          onAuthComplete?.();
+        }, 500);
       } else {
         setFeedback(response.message || "Authentication failed");
       }
@@ -85,6 +89,10 @@ export function AuthPage({ initialMode = "signup" }: { initialMode?: "login" | "
 
   const handleGoogle = () => {
     initiateGoogleAuth(mode);
+    // Call onAuthComplete for Google flow
+    setTimeout(() => {
+      onAuthComplete?.();
+    }, 1000);
   };
 
   return (
