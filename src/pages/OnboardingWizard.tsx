@@ -11,7 +11,7 @@ type OnboardingStep = {
   fields: {
     name: string;
     label: string;
-    type: "text" | "email" | "url" | "select";
+    type: "text" | "email" | "url" | "tel" | "select";
     placeholder: string;
     options?: { value: string; label: string }[];
     required?: boolean;
@@ -21,8 +21,29 @@ type OnboardingStep = {
 const steps: OnboardingStep[] = [
   {
     id: 1,
-    title: "Welcome to Klin! 🚀",
+    title: "Welcome to Klin",
     description: "Let's set up your account with a few quick details",
+    fields: [
+      {
+        name: "firstName",
+        label: "First Name",
+        type: "text",
+        placeholder: "Your first name",
+        required: true,
+      },
+      {
+        name: "lastName",
+        label: "Last Name",
+        type: "text",
+        placeholder: "Your last name",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Tell us about your business",
+    description: "Help us understand what you build",
     fields: [
       {
         name: "companyName",
@@ -31,13 +52,6 @@ const steps: OnboardingStep[] = [
         placeholder: "Your company or business name",
         required: true,
       },
-    ],
-  },
-  {
-    id: 2,
-    title: "Tell us about your business",
-    description: "Help us understand what you do",
-    fields: [
       {
         name: "businessType",
         label: "Business Type",
@@ -58,29 +72,29 @@ const steps: OnboardingStep[] = [
   },
   {
     id: 3,
-    title: "Your website details",
+    title: "Website & Contact",
     description: "Configure your Klin workspace",
     fields: [
       {
-        name: "websiteUrl",
-        label: "Website URL",
+        name: "companyUrl",
+        label: "Company Website",
         type: "url",
-        placeholder: "yourdomain.com",
-        required: true,
+        placeholder: "https://example.com",
+        required: false,
       },
       {
-        name: "websiteDescription",
-        label: "Website Description",
-        type: "text",
-        placeholder: "Brief description of your website",
+        name: "phone",
+        label: "Phone Number",
+        type: "tel",
+        placeholder: "+1 (555) 000-0000",
         required: false,
       },
     ],
   },
   {
     id: 4,
-    title: "Almost done! 🎉",
-    description: "One final step - your preferences",
+    title: "Your preferences",
+    description: "Customize your Klin experience",
     fields: [
       {
         name: "templatePreference",
@@ -92,6 +106,19 @@ const steps: OnboardingStep[] = [
           { value: "bold", label: "Bold & Modern" },
           { value: "creative", label: "Creative & Playful" },
           { value: "corporate", label: "Corporate & Professional" },
+        ],
+        required: true,
+      },
+      {
+        name: "teamSize",
+        label: "Team Size",
+        type: "select",
+        placeholder: "How many people in your team?",
+        options: [
+          { value: "solo", label: "Just me" },
+          { value: "small", label: "2-5 people" },
+          { value: "medium", label: "6-20 people" },
+          { value: "large", label: "20+ people" },
         ],
         required: true,
       },
@@ -139,150 +166,169 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     (field) => !field.required || formData[field.name]
   );
 
-  const slideVariants = {
+  const flipVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 1000 : -1000,
+      rotateY: dir > 0 ? 90 : -90,
       opacity: 0,
     }),
     center: {
       zIndex: 1,
-      x: 0,
+      rotateY: 0,
       opacity: 1,
     },
     exit: (dir: number) => ({
       zIndex: 0,
-      x: dir < 0 ? 1000 : -1000,
+      rotateY: dir < 0 ? 90 : -90,
       opacity: 0,
     }),
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F1020] via-[#1A1F35] to-[#0F1020] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#F9FAFB] px-4 py-8 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="w-full max-w-2xl">
+        {/* Klin logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 flex items-center justify-center gap-3"
+        >
+          <div className="h-10 w-10 bg-gradient-to-br from-[#0F1020] to-[#0F1020]/70 rounded-xl flex items-center justify-center">
+            <span className="text-white font-display text-lg">K</span>
+          </div>
+          <span className="font-semibold text-[#0F1020]">Klin</span>
+        </motion.div>
+
         {/* Progress bar */}
         <div className="mb-12">
           <div className="flex gap-2">
             {steps.map((_, index) => (
               <motion.div
                 key={index}
-                className="h-1 flex-1 rounded-full bg-white/10"
+                className="h-1.5 flex-1 rounded-full bg-[#0F1020]/10"
                 animate={{
                   backgroundColor:
-                    index <= currentStep ? "#FFFFFF" : "rgba(255, 255, 255, 0.1)",
+                    index <= currentStep ? "#0F1020" : "rgba(15, 16, 32, 0.1)",
                 }}
                 transition={{ duration: 0.5 }}
               />
             ))}
           </div>
-          <p className="mt-4 text-sm text-white/60">
+          <p className="mt-4 text-sm text-[#0F1020]/60">
             Step {currentStep + 1} of {steps.length}
           </p>
         </div>
 
-        {/* Form content */}
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={currentStep}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.5 },
-            }}
-            className="space-y-8"
-          >
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="space-y-3"
-            >
-              <h2 className="text-4xl font-display text-white">{step.title}</h2>
-              <p className="text-lg text-white/60">{step.description}</p>
-            </motion.div>
-
-            {/* Form fields */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-6"
-            >
-              {step.fields.map((field, index) => (
-                <motion.div
-                  key={field.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
-                  className="space-y-2"
-                >
-                  <label className="block text-sm font-medium text-white">
-                    {field.label}
-                    {field.required && <span className="text-red-400 ml-1">*</span>}
-                  </label>
-
-                  {field.type === "select" ? (
-                    <select
-                      name={field.name}
-                      value={formData[field.name] || ""}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50 transition"
-                    >
-                      <option value="">{field.placeholder}</option>
-                      {field.options?.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input
-                      type={field.type}
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      value={formData[field.name] || ""}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50 transition"
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation buttons */}
+        {/* Card container */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 flex gap-4"
+          layout
+          className="rounded-2xl border border-[#0F1020]/10 bg-white shadow-lg p-8 md:p-12"
+          style={{ perspective: 1000 }}
         >
-          <button
-            onClick={handlePrev}
-            disabled={currentStep === 0}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
+          {/* Form content */}
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={flipVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                rotateY: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.5 },
+              }}
+              className="space-y-8"
+              style={{ transformStyle: "preserve-3d" }}
+            >
+              {/* Header */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-2"
+              >
+                <h2 className="text-3xl font-display text-[#0F1020]">{step.title}</h2>
+                <p className="text-base text-[#0F1020]/60">{step.description}</p>
+              </motion.div>
 
-          <button
-            onClick={handleNext}
-            disabled={!isStepValid}
-            className="ml-auto flex items-center gap-2 px-8 py-3 rounded-lg bg-white text-[#0F1020] font-semibold hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              {/* Form fields */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-5"
+              >
+                {step.fields.map((field, index) => (
+                  <motion.div
+                    key={field.name}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + index * 0.08 }}
+                  >
+                    <label className="block text-sm font-semibold text-[#0F1020] mb-2">
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+
+                    {field.type === "select" ? (
+                      <select
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 rounded-lg bg-white border border-[#0F1020]/20 text-[#0F1020] placeholder:text-[#0F1020]/40 focus:outline-none focus:border-[#0F1020]/50 focus:ring-2 focus:ring-[#0F1020]/10 transition"
+                      >
+                        <option value="">{field.placeholder}</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        type={field.type}
+                        name={field.name}
+                        placeholder={field.placeholder}
+                        value={formData[field.name] || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 rounded-lg bg-white border border-[#0F1020]/20 text-[#0F1020] placeholder:text-[#0F1020]/40 focus:outline-none focus:border-[#0F1020]/50 focus:ring-2 focus:ring-[#0F1020]/10 transition"
+                      />
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-10 flex gap-4"
           >
-            {currentStep === steps.length - 1 ? "Get Started" : "Next"}
-            <ChevronRight className="h-4 w-4" />
-          </button>
+            <button
+              onClick={handlePrev}
+              disabled={currentStep === 0}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0F1020]/10 text-[#0F1020] border border-[#0F1020]/20 hover:bg-[#0F1020]/20 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </button>
+
+            <button
+              onClick={handleNext}
+              disabled={!isStepValid}
+              className="ml-auto flex items-center gap-2 px-8 py-3 rounded-lg bg-[#0F1020] text-white font-semibold hover:bg-[#0F1020]/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {currentStep === steps.length - 1 ? "Complete Setup" : "Next"}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </motion.div>
         </motion.div>
 
-        {/* Step indicator */}
-        <div className="mt-8 text-center text-sm text-white/40">
+        {/* Footer */}
+        <div className="mt-8 text-center text-sm text-[#0F1020]/60">
           {currentStep + 1} / {steps.length}
         </div>
       </div>

@@ -17,10 +17,18 @@ const googleClientId =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
   import.meta.env.VITE_AUTH_GOOGLE_CLIENT_ID ||
   "";
+
+// Construct redirect URL based on environment
 const redirectUrl =
   import.meta.env.VITE_AUTH_REDIRECT_URL ||
   import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
-  `${window.location.origin}/auth/callback`;
+  (() => {
+    try {
+      return `${window.location.origin}/auth/callback`;
+    } catch {
+      return "http://localhost:5173/auth/callback";
+    }
+  })();
 const resendApiKey =
   import.meta.env.VITE_RESEND_API_KEY ||
   import.meta.env.VITE_AUTH_RESEND_API_KEY ||
