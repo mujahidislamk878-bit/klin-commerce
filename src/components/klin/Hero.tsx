@@ -71,7 +71,7 @@ export function Hero({ onGetStarted, onWatchVideo }: HeroProps) {
                   </p>
 
                   <div className="flex flex-wrap gap-4 pt-4">
-                    <MagneticButton>Start building</MagneticButton>
+                    <MagneticButton onClick={() => onGetStarted?.("signup")}>Start building</MagneticButton>
                     <MagneticButton variant="ghost">
                       <ArrowRight className="mr-2 h-4 w-4" />
                       View templates
