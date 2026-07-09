@@ -195,8 +195,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               animate="center"
               exit="exit"
               transition={{
-                rotateY: { type: "spring", stiffness: 100, damping: 15 },
-                opacity: { duration: 0.3 }
+                rotateY: { type: "spring", stiffness: 220, damping: 22 },
+                opacity: { duration: 0.15 }
               }}
               style={{ transformStyle: "preserve-3d" }}
               className="w-full overflow-hidden rounded-[32px] border border-black/5 bg-white shadow-[0_20px_80px_-20px_rgba(15,16,32,0.15)] p-8 md:p-10 flex flex-col justify-between min-h-[450px]"

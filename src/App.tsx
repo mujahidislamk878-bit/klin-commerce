@@ -14,6 +14,7 @@ import { AuthCallback } from "@/pages/AuthCallback";
 import { OnboardingWizard } from "@/pages/OnboardingWizard";
 import { SetupScreen } from "@/pages/SetupScreen";
 import { Dashboard } from "@/pages/Dashboard";
+import { LogoutPage } from "@/pages/LogoutPage";
 import { sessionManager, type UserSession } from "@/lib/session";
 
 // Puck touches window at module scope — load client-only.
@@ -87,7 +88,7 @@ export function App() {
 
   // Route protection and redirection
   useEffect(() => {
-    if (loading || !mounted || currentPath === "/auth/callback") return;
+    if (loading || !mounted || currentPath === "/auth/callback" || currentPath === "/logout") return;
 
     if (!userSession) {
       // Guest users
@@ -178,8 +179,12 @@ export function App() {
     navigateTo("/dashboard/home");
   };
 
-  // Handle dashboard logout -> back to landing and clear session
+  // Handle dashboard logout -> go to logout screen
   const handleLogout = () => {
+    navigateTo("/logout");
+  };
+
+  const handleLogoutComplete = () => {
     sessionManager.clearSession();
     setUserSession(null);
     navigateTo("/");
@@ -217,6 +222,10 @@ export function App() {
       );
     }
     return <SetupScreen onComplete={handleSetupComplete} />;
+  }
+
+  if (currentPath === "/logout") {
+    return <LogoutPage onLogoutComplete={handleLogoutComplete} />;
   }
 
   if (currentPath.startsWith("/dashboard")) {

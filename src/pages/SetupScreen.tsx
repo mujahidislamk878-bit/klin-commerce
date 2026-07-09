@@ -130,20 +130,29 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
         </div>
 
         {/* Completion message */}
-        {isComplete && (
+         {isComplete && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6 }}
-            className="mt-8 bg-white/80 border border-black/5 rounded-2xl p-6 shadow-xl backdrop-blur-md"
+            className="mt-8 bg-white/80 border border-black/5 rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col items-center justify-center"
           >
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl mb-3"
+            <svg
+              className="w-12 h-12 text-emerald-500 mb-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.5"
+              viewBox="0 0 24 24"
             >
-              🚀
-            </motion.div>
+              <motion.path
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
             <h2 className="text-2xl font-bold text-[#0F1020]">Ready for takeoff!</h2>
             <p className="text-[#0F1020]/60 text-xs mt-1">Redirecting to your dashboard console...</p>
           </motion.div>

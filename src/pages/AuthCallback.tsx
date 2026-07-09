@@ -117,20 +117,18 @@ export function AuthCallback() {
             )}
 
             {status === "success" && (
-              <>
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-2"
-                >
-                  <Check className="h-8 w-8" />
-                </motion.div>
-                <h3 className="text-xl font-bold tracking-tight text-[#0F1020]">{message}</h3>
-                <p className="text-sm text-[#0F1020]/60 flex items-center justify-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  Preparing your workspace...
-                </p>
-              </>
+              <div className="space-y-4 py-4 w-full">
+                <h3 className="text-2xl font-bold tracking-tight text-[#0F1020]">Welcome to Klin</h3>
+                <div className="pt-6">
+                  <div className="relative w-10 h-10 mx-auto">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#0F1020] border-r-[#0F1020]"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
 
             {status === "error" && (
