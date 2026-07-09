@@ -14,6 +14,8 @@ import { AuthCallback } from "@/pages/AuthCallback";
 import { OnboardingWizard } from "@/pages/OnboardingWizard";
 import { SetupScreen } from "@/pages/SetupScreen";
 import { Dashboard } from "@/pages/Dashboard";
+import { WebsiteDashboard } from "@/pages/WebsiteDashboard";
+import { PlaygroundPage } from "@/pages/PlaygroundPage";
 import { LogoutPage } from "@/pages/LogoutPage";
 import { sessionManager, type UserSession } from "@/lib/session";
 
@@ -226,6 +228,31 @@ export function App() {
 
   if (currentPath === "/logout") {
     return <LogoutPage onLogoutComplete={handleLogoutComplete} />;
+  }
+
+  if (currentPath.startsWith("/playground")) {
+    if (!userSession) {
+      return (
+        <AuthPage
+          initialMode="login"
+          onAuthComplete={handleAuthComplete}
+        />
+      );
+    }
+    return <PlaygroundPage />;
+  }
+
+  if (currentPath.startsWith("/dashboard/websites/")) {
+    if (!userSession) {
+      return (
+        <AuthPage
+          initialMode="login"
+          onAuthComplete={handleAuthComplete}
+        />
+      );
+    }
+    const websiteId = currentPath.split("/")[3];
+    return <WebsiteDashboard websiteId={websiteId} user={userSession} onNavigate={navigateTo} />;
   }
 
   if (currentPath.startsWith("/dashboard")) {

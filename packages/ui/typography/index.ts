@@ -1,0 +1,15 @@
+export { default as Heading, Heading as HeadingComponent } from "./Heading";
+export { default as Paragraph, Paragraph as ParagraphComponent } from "./Paragraph";
+export { default as Badge, Badge as BadgeComponent } from "./Badge";
+export { default as Caption, Caption as CaptionComponent } from "./Caption";
+export { default as Text, Text as TextComponent } from "./Text";
+export { default as Label, Label as LabelComponent } from "./Label";
+export { default as Code, Code as CodeComponent, InlineCode } from "./Code";
+export { default as Blockquote, Blockquote as BlockquoteComponent } from "./Blockquote";
+export { default as GradientText, GradientText as GradientTextComponent } from "./GradientText";
+export { default as Highlight, Highlight as HighlightComponent } from "./Highlight";
+export { default as LinkText, LinkText as LinkTextComponent } from "./LinkText";
+export { UnorderedList, OrderedList, ListItem } from "./Lists";
+export { default as Kbd, Kbd as KbdComponent } from "./Kbd";
+export { default as RichText, RichText as RichTextComponent } from "./RichText";
+export { default as AnimatedText, AnimatedText as AnimatedTextComponent } from "./AnimatedText";

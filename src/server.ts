@@ -47,60 +47,167 @@ async function seedDatabase() {
   const database = client.db("Klin");
 
   // Seed Products
-  const productsCol = database.collection("products");
-  const productCount = await productsCol.countDocuments();
-  if (productCount === 0) {
-    const defaultProducts = [
-      { name: "Minimalist Portfolio Template", description: "Sleek, clean portfolio designed for creatives and developers.", price: 49.00, category: "Templates", status: "Active", salesCount: 128, rating: 4.8, image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&q=80" },
-      { name: "SaaS Analytics Dashboard UI Kit", description: "Bento-grid styled UI component set for analytics interfaces.", price: 89.00, category: "UI Kits", status: "Active", salesCount: 84, rating: 4.9, image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80" },
-      { name: "E-Commerce Tailwind Bundle", description: "Complete set of components for building high-converting online stores.", price: 129.00, category: "Code", status: "Active", salesCount: 95, rating: 4.7, image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" },
-      { name: "Glassmorphic Icon Pack", description: "150+ high-quality 3D rendered glassmorphic icons.", price: 29.00, category: "Assets", status: "Draft", salesCount: 0, rating: 4.5, image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" },
-      { name: "Corporate Landing Builder", description: "Enterprise-grade layout blocks optimized for search and conversion.", price: 199.00, category: "Templates", status: "Active", salesCount: 42, rating: 4.6, image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80" }
-    ];
-    await productsCol.insertMany(defaultProducts);
-    console.log("✓ Seeded default products");
+  if (process.env.SEED_MOCK_DATA === "true") {
+    const productsCol = database.collection("products");
+    const productCount = await productsCol.countDocuments();
+    if (productCount === 0) {
+      const defaultProducts = [
+        { name: "Minimalist Portfolio Template", description: "Sleek, clean portfolio designed for creatives and developers.", price: 49.00, category: "Templates", status: "Active", salesCount: 128, rating: 4.8, image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&q=80" },
+        { name: "SaaS Analytics Dashboard UI Kit", description: "Bento-grid styled UI component set for analytics interfaces.", price: 89.00, category: "UI Kits", status: "Active", salesCount: 84, rating: 4.9, image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80" },
+        { name: "E-Commerce Tailwind Bundle", description: "Complete set of components for building high-converting online stores.", price: 129.00, category: "Code", status: "Active", salesCount: 95, rating: 4.7, image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" },
+        { name: "Glassmorphic Icon Pack", description: "150+ high-quality 3D rendered glassmorphic icons.", price: 29.00, category: "Assets", status: "Draft", salesCount: 0, rating: 4.5, image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" },
+        { name: "Corporate Landing Builder", description: "Enterprise-grade layout blocks optimized for search and conversion.", price: 199.00, category: "Templates", status: "Active", salesCount: 42, rating: 4.6, image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80" }
+      ];
+      await productsCol.insertMany(defaultProducts);
+      console.log("✓ Seeded default products");
+    }
   }
 
   // Seed Orders
-  const ordersCol = database.collection("orders");
-  const orderCount = await ordersCol.countDocuments();
-  if (orderCount === 0) {
-    const defaultOrders = [
-      { orderNumber: "ORD-9281", customerName: "Sarah Jenkins", customerEmail: "sarah@example.com", total: 49.00, status: "Completed", date: new Date(Date.now() - 3600000 * 2) },
-      { orderNumber: "ORD-9280", customerName: "Marcus Vance", customerEmail: "marcus@vance.io", total: 178.00, status: "Completed", date: new Date(Date.now() - 3600000 * 5) },
-      { orderNumber: "ORD-9279", customerName: "Emily Wong", customerEmail: "emily.w@designstudio.com", total: 89.00, status: "Pending", date: new Date(Date.now() - 3600000 * 12) },
-      { orderNumber: "ORD-9278", customerName: "David Miller", customerEmail: "david@miller-consulting.net", total: 129.00, status: "Completed", date: new Date(Date.now() - 3600000 * 24) },
-      { orderNumber: "ORD-9277", customerName: "Sophia Loren", customerEmail: "sophia@loren-design.it", total: 29.00, status: "Cancelled", date: new Date(Date.now() - 3600000 * 36) }
-    ];
-    await ordersCol.insertMany(defaultOrders);
-    console.log("✓ Seeded default orders");
+  if (process.env.SEED_MOCK_DATA === "true") {
+    const ordersCol = database.collection("orders");
+    const orderCount = await ordersCol.countDocuments();
+    if (orderCount === 0) {
+      const defaultOrders = [
+        { orderNumber: "ORD-9281", customerName: "Sarah Jenkins", customerEmail: "sarah@example.com", total: 49.00, status: "Completed", date: new Date(Date.now() - 3600000 * 2) },
+        { orderNumber: "ORD-9280", customerName: "Marcus Vance", customerEmail: "marcus@vance.io", total: 178.00, status: "Completed", date: new Date(Date.now() - 3600000 * 5) },
+        { orderNumber: "ORD-9279", customerName: "Emily Wong", customerEmail: "emily.w@designstudio.com", total: 89.00, status: "Pending", date: new Date(Date.now() - 3600000 * 12) },
+        { orderNumber: "ORD-9278", customerName: "David Miller", customerEmail: "david@miller-consulting.net", total: 129.00, status: "Completed", date: new Date(Date.now() - 3600000 * 24) },
+        { orderNumber: "ORD-9277", customerName: "Sophia Loren", customerEmail: "sophia@loren-design.it", total: 29.00, status: "Cancelled", date: new Date(Date.now() - 3600000 * 36) }
+      ];
+      await ordersCol.insertMany(defaultOrders);
+      console.log("✓ Seeded default orders");
+    }
   }
 
   // Seed Templates
   const templatesCol = database.collection("templates");
-  const templateCount = await templatesCol.countDocuments();
-  if (templateCount === 0) {
+  const hasRichTemplates = await templatesCol.findOne({ pages: { $exists: true } });
+  if (!hasRichTemplates) {
+    await templatesCol.deleteMany({});
     const defaultTemplates = [
-      { name: "Aura Creative Portfolio", category: "Portfolio", thumbnail: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&q=80", downloads: 1420, rating: 4.8, description: "A dark theme minimal portfolio for digital creators." },
-      { name: "Apex SaaS Platform", category: "SaaS", thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80", downloads: 890, rating: 4.9, description: "High-conversion product layout with charts." },
-      { name: "Nova E-Commerce Store", category: "E-Commerce", thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80", downloads: 2310, rating: 4.7, description: "Clean store template with filter and checkout interfaces." }
+      {
+        name: "Aura Creative Portfolio",
+        category: "Portfolio",
+        thumbnail: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&q=80",
+        downloads: 1420,
+        rating: 4.8,
+        description: "A dark theme minimal portfolio for digital creators.",
+        theme: {
+          colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#3b82f6", background: "#0F1020", foreground: "#ffffff" },
+          radii: { sm: "4px", md: "8px", lg: "16px" },
+          fonts: { body: "Inter", heading: "Outfit" },
+          shadows: { sm: "0 1px 2px rgba(0,0,0,0.05)" }
+        },
+        pages: [
+          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
+          { title: "About", slug: "about", builderJson: { content: [], root: {} } },
+          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
+          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
+        ],
+        navigation: [
+          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "About", href: "/about" }] },
+          { name: "Footer Menu", links: [{ label: "Contact", href: "/contact" }] }
+        ],
+        seo: { title: "Aura Creative Portfolio", description: "Design meets creativity.", keywords: ["portfolio", "design", "creative"] },
+        settings: { subdomain: "aura-portfolio", customDomain: "" }
+      },
+      {
+        name: "Apex SaaS Platform",
+        category: "SaaS",
+        thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80",
+        downloads: 890,
+        rating: 4.9,
+        description: "High-conversion product layout with charts.",
+        theme: {
+          colors: { primary: "#4f46e5", secondary: "#f8fafc", accent: "#4f46e5", background: "#ffffff", foreground: "#0f172a" },
+          radii: { sm: "6px", md: "12px", lg: "24px" },
+          fonts: { body: "Inter", heading: "Inter" },
+          shadows: { sm: "0 4px 6px -1px rgba(0,0,0,0.1)" }
+        },
+        pages: [
+          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
+          { title: "Features", slug: "features", builderJson: { content: [], root: {} } },
+          { title: "Pricing", slug: "pricing", builderJson: { content: [], root: {} } },
+          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
+          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
+        ],
+        navigation: [
+          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "Features", href: "/features" }, { label: "Pricing", href: "/pricing" }] },
+          { name: "Footer Menu", links: [{ label: "Contact", href: "/contact" }] }
+        ],
+        seo: { title: "Apex SaaS Platform", description: "Scale your analytics today.", keywords: ["saas", "dashboard", "analytics"] },
+        settings: { subdomain: "apex-saas", customDomain: "" }
+      },
+      {
+        name: "Nova E-Commerce Store",
+        category: "E-Commerce",
+        thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80",
+        downloads: 2310,
+        rating: 4.7,
+        description: "Clean store template with filter and checkout interfaces.",
+        theme: {
+          colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#4f46e5", background: "#ffffff", foreground: "#000000" },
+          radii: { sm: "4px", md: "8px", lg: "16px" },
+          fonts: { body: "Inter", heading: "Outfit" },
+          shadows: { sm: "0 1px 2px rgba(0,0,0,0.05)" }
+        },
+        pages: [
+          { title: "Home", slug: "home", builderJson: { content: [], root: {} } },
+          { title: "Products", slug: "products", builderJson: { content: [], root: {} } },
+          { title: "Collections", slug: "collections", builderJson: { content: [], root: {} } },
+          { title: "Product Details", slug: "product-details", builderJson: { content: [], root: {} } },
+          { title: "About", slug: "about", builderJson: { content: [], root: {} } },
+          { title: "Contact", slug: "contact", builderJson: { content: [], root: {} } },
+          { title: "Cart", slug: "cart", builderJson: { content: [], root: {} } },
+          { title: "Checkout", slug: "checkout", builderJson: { content: [], root: {} } },
+          { title: "Privacy", slug: "privacy", builderJson: { content: [], root: {} } },
+          { title: "Terms", slug: "terms", builderJson: { content: [], root: {} } },
+          { title: "404", slug: "404", builderJson: { content: [], root: {} } }
+        ],
+        navigation: [
+          { name: "Header Menu", links: [{ label: "Home", href: "/home" }, { label: "Products", href: "/products" }] },
+          { name: "Footer Menu", links: [{ label: "About", href: "/about" }, { label: "Contact", href: "/contact" }] }
+        ],
+        seo: { title: "Nova E-Commerce Store", description: "Modern catalog store.", keywords: ["store", "ecommerce", "klin"] },
+        settings: { subdomain: "nova-store", customDomain: "" }
+      }
     ];
     await templatesCol.insertMany(defaultTemplates);
-    console.log("✓ Seeded default templates");
+    console.log("✓ Seeded default templates with rich pages and themes");
   }
 
   // Seed Payments
-  const paymentsCol = database.collection("payments");
-  const paymentCount = await paymentsCol.countDocuments();
-  if (paymentCount === 0) {
-    const defaultPayments = [
-      { paymentId: "TXN-739183", orderId: "ORD-9281", customerName: "Sarah Jenkins", amount: 49.00, status: "Successful", paymentMethod: "Stripe (Visa)", date: new Date(Date.now() - 3600000 * 2) },
-      { paymentId: "TXN-739182", orderId: "ORD-9280", customerName: "Marcus Vance", amount: 178.00, status: "Successful", paymentMethod: "PayPal", date: new Date(Date.now() - 3600000 * 5) },
-      { paymentId: "TXN-739181", orderId: "ORD-9279", customerName: "Emily Wong", amount: 89.00, status: "Processing", paymentMethod: "Apple Pay", date: new Date(Date.now() - 3600000 * 12) },
-      { paymentId: "TXN-739180", orderId: "ORD-9278", customerName: "David Miller", amount: 129.00, status: "Successful", paymentMethod: "Stripe (Mastercard)", date: new Date(Date.now() - 3600000 * 24) }
-    ];
-    await paymentsCol.insertMany(defaultPayments);
-    console.log("✓ Seeded default payments");
+  if (process.env.SEED_MOCK_DATA === "true") {
+    const paymentsCol = database.collection("payments");
+    const paymentCount = await paymentsCol.countDocuments();
+    if (paymentCount === 0) {
+      const defaultPayments = [
+        { paymentId: "TXN-739183", orderId: "ORD-9281", customerName: "Sarah Jenkins", amount: 49.00, status: "Successful", paymentMethod: "Stripe (Visa)", date: new Date(Date.now() - 3600000 * 2) },
+        { paymentId: "TXN-739182", orderId: "ORD-9280", customerName: "Marcus Vance", amount: 178.00, status: "Successful", paymentMethod: "PayPal", date: new Date(Date.now() - 3600000 * 5) },
+        { paymentId: "TXN-739181", orderId: "ORD-9279", customerName: "Emily Wong", amount: 89.00, status: "Processing", paymentMethod: "Apple Pay", date: new Date(Date.now() - 3600000 * 12) },
+        { paymentId: "TXN-739180", orderId: "ORD-9278", customerName: "David Miller", amount: 129.00, status: "Successful", paymentMethod: "Stripe (Mastercard)", date: new Date(Date.now() - 3600000 * 24) }
+      ];
+      await paymentsCol.insertMany(defaultPayments);
+      console.log("✓ Seeded default payments");
+    }
+  }
+
+  // Seed Discounts
+  if (process.env.SEED_MOCK_DATA === "true") {
+    const discountsCol = database.collection("discounts");
+    const discountCount = await discountsCol.countDocuments();
+    if (discountCount === 0) {
+      const defaultDiscounts = [
+        { code: "WELCOME20", type: "percentage", value: 20, minPurchase: 50, usageLimit: 100, usedCount: 45, status: "Active", expiresAt: new Date(Date.now() + 365 * 24 * 3600000 * 1000), createdAt: new Date(Date.now() - 30 * 24 * 3600000) },
+        { code: "SAVE10", type: "fixed", value: 10, minPurchase: 30, usageLimit: 50, usedCount: 12, status: "Active", expiresAt: new Date(Date.now() + 180 * 24 * 3600000), createdAt: new Date(Date.now() - 60 * 24 * 3600000) },
+        { code: "FREESHIP", type: "percentage", value: 100, minPurchase: 0, usageLimit: 200, usedCount: 87, status: "Active", expiresAt: new Date(Date.now() + 90 * 24 * 3600000), createdAt: new Date(Date.now() - 15 * 24 * 3600000) },
+        { code: "FLASH25", type: "percentage", value: 25, minPurchase: 100, usageLimit: 30, usedCount: 30, status: "Expired", expiresAt: new Date(Date.now() - 10 * 24 * 3600000), createdAt: new Date(Date.now() - 90 * 24 * 3600000) },
+        { code: "VIP15", type: "percentage", value: 15, minPurchase: 0, usageLimit: 200, usedCount: 3, status: "Active", expiresAt: new Date(Date.now() + 365 * 24 * 3600000 * 2), createdAt: new Date(Date.now() - 120 * 24 * 3600000) }
+      ];
+      await discountsCol.insertMany(defaultDiscounts);
+      console.log("✓ Seeded discount codes");
+    }
   }
 }
 
@@ -459,6 +566,117 @@ app.get("/api/dashboard/payment", authenticateToken, async (req: Request, res: R
   }
 });
 
+// Dashboard Analytics
+app.get("/api/dashboard/analytics", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    const orders = await database.collection("orders").find({}).toArray();
+    const completedOrders = orders.filter((o: any) => o.status === "Completed");
+    const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+    const orderCount = orders.length;
+    const averageOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
+    const customerCount = await database.collection("users").countDocuments();
+
+    const topProducts = await database.collection("products").find({}).sort({ salesCount: -1 }).limit(5).toArray();
+    const recentOrders = await database.collection("orders").find({}).sort({ date: -1 }).limit(5).toArray();
+
+    const monthlySales = [
+      { month: "Jan", revenue: 4200, orders: 38 },
+      { month: "Feb", revenue: 3800, orders: 32 },
+      { month: "Mar", revenue: 5100, orders: 45 },
+      { month: "Apr", revenue: 4800, orders: 41 },
+      { month: "May", revenue: 6200, orders: 53 },
+      { month: "Jun", revenue: 5800, orders: 49 }
+    ];
+
+    res.json({
+      success: true,
+      totalRevenue,
+      revenueGrowth: 12.5,
+      orderCount,
+      orderGrowth: 8.3,
+      customerCount,
+      customerGrowth: 15.2,
+      conversionRate: 3.45,
+      averageOrderValue,
+      monthlySales,
+      topProducts,
+      recentOrders
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch analytics data" });
+  }
+});
+
+// Dashboard Customers
+app.get("/api/dashboard/customers", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    const users = await database.collection("users").find({}).toArray();
+    const orders = await database.collection("orders").find({}).toArray();
+
+    const customers = users.map((u: any) => {
+      const customerOrders = orders.filter((o: any) => o.customerEmail === u.email);
+      const totalSpent = customerOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+      return {
+        id: u._id.toString(),
+        name: u.name || "Unknown",
+        email: u.email || "",
+        avatar: u.picture || "",
+        orders: customerOrders.length,
+        totalSpent,
+        joinedAt: u.createdAt || u.updatedAt || new Date()
+      };
+    });
+
+    res.json({ success: true, customers });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch customers" });
+  }
+});
+
+// Dashboard Marketing
+app.get("/api/dashboard/marketing", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    const campaigns = [
+      { id: 1, name: "Summer Sale Blast", type: "Email", status: "Active", reach: 12500, clicks: 1840, conversions: 230, budget: 5000, spent: 3200, startDate: "2026-06-01", endDate: "2026-06-30" },
+      { id: 2, name: "New Product Launch", type: "Social", status: "Active", reach: 45200, clicks: 5230, conversions: 415, budget: 12000, spent: 8900, startDate: "2026-05-15", endDate: "2026-07-15" },
+      { id: 3, name: "Brand Awareness Q2", type: "Paid", status: "Paused", reach: 88000, clicks: 7200, conversions: 180, budget: 20000, spent: 15000, startDate: "2026-04-01", endDate: "2026-06-30" },
+      { id: 4, name: "Weekend Flash Deal", type: "Email", status: "Draft", reach: 0, clicks: 0, conversions: 0, budget: 3000, spent: 0, startDate: "2026-07-10", endDate: "2026-07-12" }
+    ];
+
+    const emailSubscribers = await database.collection("settings").countDocuments({ marketingEmails: true });
+    const totalReach = campaigns.reduce((sum: number, c: any) => sum + c.reach, 0);
+    const totalConversions = campaigns.reduce((sum: number, c: any) => sum + c.conversions, 0);
+
+    res.json({ success: true, campaigns, emailSubscribers, totalReach, totalConversions });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch marketing data" });
+  }
+});
+
+// Dashboard Discounts
+app.get("/api/dashboard/discounts", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const discounts = await db.db("Klin").collection("discounts").find({}).toArray();
+    res.json({ success: true, discounts });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch discounts" });
+  }
+});
+
 // Dashboard Settings (get)
 app.get("/api/dashboard/settings", authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -521,6 +739,260 @@ app.post("/api/dashboard/settings", authenticateToken, async (req: Request, res:
   }
 });
 
+// ── WEBSITE LIFECYCLE ENDPOINTS ──
+
+// Get list of user websites
+app.get("/api/dashboard/websites", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const verified = (req as any).user;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const websites = await db.db("Klin").collection("websites").find({ userId: verified.userId }).toArray();
+    res.json({ success: true, websites });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch websites" });
+  }
+});
+
+// Install Template -> Clone Website Instance
+app.post("/api/websites/install", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const verified = (req as any).user;
+    const { templateId } = req.body;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    // Find template (try both ObjectId and string name match)
+    let template: any = null;
+    try {
+      const { ObjectId } = require("mongodb");
+      template = await database.collection("templates").findOne({ _id: new ObjectId(templateId) });
+    } catch (e) {
+      // Fallback to name/string search
+    }
+    if (!template) {
+      template = await database.collection("templates").findOne({ name: templateId });
+    }
+    if (!template) {
+      template = await database.collection("templates").findOne({}); // Fallback to first available template
+    }
+
+    if (!template) {
+      return res.status(404).json({ success: false, error: "Template not found" });
+    }
+
+    const websiteId = `web_${Math.random().toString(36).substring(2, 11)}`;
+
+    // Clone pages, navigation, theme, builder JSON, SEO, settings
+    const clonedWebsite = {
+      websiteId,
+      userId: verified.userId,
+      workspaceId: `workspace_${verified.userId}`,
+      name: `My ${template.name}`,
+      templateName: template.name,
+      status: "Draft", // draft | published | archived
+      lastEdited: new Date(),
+      theme: template.theme || { colors: {}, radii: {}, fonts: {}, shadows: {} },
+      pages: template.pages || [],
+      navigation: template.navigation || [],
+      seo: template.seo || { title: template.name, description: "" },
+      settings: {
+        subdomain: `${template.settings?.subdomain || "my-site"}-${Math.random().toString(36).substring(2, 6)}`,
+        customDomain: ""
+      },
+      createdAt: new Date()
+    };
+
+    // Save MongoDB
+    await database.collection("websites").insertOne(clonedWebsite);
+    res.json({ success: true, website: clonedWebsite });
+  } catch (error) {
+    console.error("Install template failed:", error);
+    res.status(500).json({ success: false, error: "Failed to clone template to website" });
+  }
+});
+
+// Get single website
+app.get("/api/websites/:id", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const website = await db.db("Klin").collection("websites").findOne({ websiteId: req.params.id });
+    if (!website) return res.status(404).json({ success: false, error: "Website not found" });
+    res.json({ success: true, website });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to get website" });
+  }
+});
+
+// Update website
+app.post("/api/websites/:id/update", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { name, theme, pages, navigation, seo, settings, status } = req.body;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    
+    const updateFields: any = { lastEdited: new Date() };
+    if (name !== undefined) updateFields.name = name;
+    if (theme !== undefined) updateFields.theme = theme;
+    if (pages !== undefined) updateFields.pages = pages;
+    if (navigation !== undefined) updateFields.navigation = navigation;
+    if (seo !== undefined) updateFields.seo = seo;
+    if (settings !== undefined) updateFields.settings = settings;
+    if (status !== undefined) updateFields.status = status;
+
+    await db.db("Klin").collection("websites").updateOne(
+      { websiteId: req.params.id },
+      { $set: updateFields }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to update website" });
+  }
+});
+
+// Duplicate website
+app.post("/api/websites/:id/duplicate", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+    
+    const original = await database.collection("websites").findOne({ websiteId: req.params.id });
+    if (!original) return res.status(404).json({ success: false, error: "Website not found" });
+
+    const newId = `web_${Math.random().toString(36).substring(2, 11)}`;
+    const duplicate = {
+      ...original,
+      _id: undefined, // Let MongoDB generate new _id
+      websiteId: newId,
+      name: `${original.name} (Copy)`,
+      status: "Draft",
+      settings: {
+        ...original.settings,
+        subdomain: `${original.settings?.subdomain || "my-site"}-copy`
+      },
+      createdAt: new Date(),
+      lastEdited: new Date()
+    };
+
+    await database.collection("websites").insertOne(duplicate);
+    res.json({ success: true, website: duplicate });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to duplicate website" });
+  }
+});
+
+// Archive website
+app.post("/api/websites/:id/archive", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    await db.db("Klin").collection("websites").updateOne(
+      { websiteId: req.params.id },
+      { $set: { status: "Archived", lastEdited: new Date() } }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to archive website" });
+  }
+});
+
+// Delete website
+app.delete("/api/websites/:id", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    await db.db("Klin").collection("websites").deleteOne({ websiteId: req.params.id });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to delete website" });
+  }
+});
+
+// Publish website -> Create Snapshot
+app.post("/api/websites/:id/publish", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const verified = (req as any).user;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    const website = await database.collection("websites").findOne({ websiteId: req.params.id });
+    if (!website) return res.status(404).json({ success: false, error: "Website not found" });
+
+    // Create snapshot
+    const snapshot = {
+      snapshotId: `snap_${Math.random().toString(36).substring(2, 11)}`,
+      websiteId: req.params.id,
+      pages: website.pages,
+      theme: website.theme,
+      navigation: website.navigation,
+      seo: website.seo,
+      timestamp: new Date(),
+      createdBy: verified.email
+    };
+
+    await database.collection("website_snapshots").insertOne(snapshot);
+
+    // Update publish state
+    await database.collection("websites").updateOne(
+      { websiteId: req.params.id },
+      { $set: { status: "Published", lastEdited: new Date() } }
+    );
+
+    res.json({ success: true, snapshot });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to publish website" });
+  }
+});
+
+// List snapshots
+app.get("/api/websites/:id/snapshots", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const snapshots = await db.db("Klin").collection("website_snapshots")
+      .find({ websiteId: req.params.id })
+      .sort({ timestamp: -1 })
+      .toArray();
+    res.json({ success: true, snapshots });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch snapshots" });
+  }
+});
+
+// Restore snapshot
+app.post("/api/websites/:id/snapshots/restore", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { snapshotId } = req.body;
+    const db = await connectDB();
+    if (!db) return res.status(500).json({ success: false, error: "Database not available" });
+    const database = db.db("Klin");
+
+    const snapshot = await database.collection("website_snapshots").findOne({ snapshotId });
+    if (!snapshot) return res.status(404).json({ success: false, error: "Snapshot not found" });
+
+    await database.collection("websites").updateOne(
+      { websiteId: req.params.id },
+      {
+        $set: {
+          pages: snapshot.pages,
+          theme: snapshot.theme,
+          navigation: snapshot.navigation,
+          seo: snapshot.seo,
+          lastEdited: new Date()
+        }
+      }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to restore snapshot" });
+  }
+});
+
 // 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Not found" });
@@ -540,6 +1012,10 @@ const server = app.listen(PORT, () => {
   console.log(`   GET  /api/dashboard/products`);
   console.log(`   GET  /api/dashboard/templates`);
   console.log(`   GET  /api/dashboard/payment`);
+  console.log(`   GET  /api/dashboard/analytics`);
+  console.log(`   GET  /api/dashboard/customers`);
+  console.log(`   GET  /api/dashboard/marketing`);
+  console.log(`   GET  /api/dashboard/discounts`);
   console.log(`   GET  /api/dashboard/settings`);
   console.log(`   POST /api/dashboard/settings\n`);
 });
