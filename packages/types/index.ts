@@ -95,6 +95,19 @@ export interface EditableProps extends BaseProps {
   actions?: Action[];
 }
 
+export interface RegistryBuilderMeta {
+  visible?: boolean;
+  draggable?: boolean;
+  panel?: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface RegistryDomainMeta {
+  domain: string;
+  builder?: RegistryBuilderMeta;
+}
+
 // ── Layout ──
 export interface SectionProps extends EditableProps {
   width?: "full" | "contained" | "wide" | "narrow";

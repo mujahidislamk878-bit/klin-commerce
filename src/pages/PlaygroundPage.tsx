@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Globe, Eye, Smartphone, Tablet, Monitor, Settings, Fil
 import { puckConfigBuilder } from "@/lib/puck-config-builder";
 import { FloatingBlobs, GrainOverlay } from "@/components/klin/FloatingBlobs";
 import { BuilderShell } from "../components/builder/core/BuilderShell";
+import { normalizePuckData } from "../../packages/registry";
 
 export function PlaygroundPage() {
   const [website, setWebsite] = useState<any>(null);
@@ -311,9 +312,9 @@ export function PlaygroundPage() {
             
             const matched = websitePages.find((p: any) => p.slug === activePageSlug);
             if (matched && matched.builderJson) {
-              setPuckData(matched.builderJson);
+              setPuckData(normalizePuckData(matched.builderJson, "v1"));
             } else if (websitePages.length > 0) {
-              setPuckData(websitePages[0].builderJson || { content: [], root: {} });
+              setPuckData(normalizePuckData(websitePages[0].builderJson || { content: [], root: {} }, "v1"));
               setActivePageSlug(websitePages[0].slug);
             }
           }
@@ -342,9 +343,9 @@ export function PlaygroundPage() {
             
             const matched = templatePages.find((p: any) => p.slug === activePageSlug);
             if (matched && matched.builderJson) {
-              setPuckData(matched.builderJson);
+              setPuckData(normalizePuckData(matched.builderJson, "v1"));
             } else if (templatePages.length > 0) {
-              setPuckData(templatePages[0].builderJson || { content: [], root: {} });
+              setPuckData(normalizePuckData(templatePages[0].builderJson || { content: [], root: {} }, "v1"));
               setActivePageSlug(templatePages[0].slug);
             }
           }
@@ -360,7 +361,8 @@ export function PlaygroundPage() {
   }, [websiteId, templateId, activePageSlug]);
 
   const handlePuckChange = (nextData: Data) => {
-    setPuckData(nextData);
+    const normalizedData = normalizePuckData(nextData, "v1");
+    setPuckData(normalizedData);
 
     // Debounced autosave
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -372,7 +374,7 @@ export function PlaygroundPage() {
         // Map updated Puck JSON back to pages list
         const nextPages = pages.map((p) => {
           if (p.slug === activePageSlug) {
-            return { ...p, builderJson: nextData };
+            return { ...p, builderJson: normalizedData };
           }
           return p;
         });

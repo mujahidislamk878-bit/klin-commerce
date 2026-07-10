@@ -1,10 +1,14 @@
 import { RenderContext } from "../core/RenderContext";
 import { puckConfig } from "../../lib/puck-config";
+import { normalizePuckData } from "../../../packages/registry";
 
 export class ComponentResolver {
   public static resolve(context: RenderContext): RenderContext {
-    const layout = JSON.parse(JSON.stringify(context.page.layout || { content: [], root: {} }));
+    let layout = JSON.parse(JSON.stringify(context.page.layout || { content: [], root: {} }));
     
+    // Normalize layout elements and mapping old props to unified schemas
+    layout = normalizePuckData(layout, "v1");
+
     // Resolve block types inside content
     if (layout.content) {
       layout.content = layout.content.map((block: any) => {
@@ -13,7 +17,6 @@ export class ComponentResolver {
           ...block,
           _resolvedComponent: componentDef || null,
           props: {
-            ...block.props,
             // Pre-fill default props if missing
             ...(componentDef?.defaultProps || {}),
             ...block.props,

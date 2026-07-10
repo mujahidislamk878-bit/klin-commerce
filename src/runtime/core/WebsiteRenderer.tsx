@@ -1,13 +1,15 @@
 import React from "react";
 import { RenderContext } from "./RenderContext";
 import { puckConfigBuilder } from "../../lib/puck-config-builder";
+import { normalizePuckData } from "../../../packages/registry";
 
 export interface WebsiteRendererProps {
   context: RenderContext;
 }
 
 export function WebsiteRenderer({ context }: WebsiteRendererProps) {
-  const blocks = context.page?.layout?.content || [];
+  const normalizedLayout = normalizePuckData(context.page?.layout || { content: [], root: {} }, "v1");
+  const blocks = normalizedLayout.content || [];
 
   return (
     <div 

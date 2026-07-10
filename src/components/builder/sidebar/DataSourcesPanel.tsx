@@ -1,5 +1,5 @@
 import React from "react";
-import { BindingRegistry } from "../../../packages/registry/BindingRegistry";
+import { BindingRegistry } from "../../../../packages";
 import { Copy } from "lucide-react";
 
 export function DataSourcesPanel() {

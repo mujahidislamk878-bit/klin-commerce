@@ -83,8 +83,9 @@ export * from "./ui/commerce";
 export * from "./ui/builder";
 
 // ── Registry ──
-export { REGISTRY, getEntriesByCategory, getCategories, getEntry } from "./registry";
-export type { RegistryEntry, ComponentRegistry } from "./registry";
+export { REGISTRY, getEntriesByCategory, getCategories, getEntry, normalizePuckData, REGISTRY_VERSION, BindingRegistry, Registry } from "./registry";
+export type { RegistryEntry, ComponentRegistry, DataBindingVariable } from "./registry";
+export type { RegistryBuilderMeta, RegistryDomainMeta } from "./types";
 
 // ── Runtime ──
 export * from "./runtime";

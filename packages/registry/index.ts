@@ -92,9 +92,10 @@ import { TiltCard, HoverGlow, Ripple, Confetti, Skeleton, LottieWrapper } from "
 // ── Types ──
 
 export interface RegistryEntry<T = any> {
+  id: string; // Namespaced identifier, e.g. "core.hero"
   component: React.ComponentType<T>;
   label: string;
-  category: string;
+  domain: string; // The component domain: e.g. "core", "layout", "commerce", "marketing", "media", "forms"
   subcategory?: string;
   description?: string;
   defaultProps?: Partial<T>;
@@ -105,9 +106,17 @@ export interface RegistryEntry<T = any> {
   nesting?: { allowed?: string[]; disallowed?: string[] };
   keywords?: string[];
   thumbnail?: string;
+  builder?: {
+    visible?: boolean;
+    draggable?: boolean;
+    panel?: string; // The builder sidebar section, e.g. "Layout", "Storefront"
+    icon?: string;
+    order?: number;
+  };
 }
 
 export type ComponentRegistry = Map<string, RegistryEntry<any>>;
+
 
 // ── Generic schema helpers ──
 
@@ -142,9 +151,11 @@ const responsiveProp = (label: string) => ({
   type: "object" as const,
   label,
   subfields: {
-    desktop: { type: "text" as const, label: "Desktop" },
-    tablet: { type: "text" as const, label: "Tablet" },
-    mobile: { type: "text" as const, label: "Mobile" },
+    desktop: { type: "text" as const, label: "Desktop (1200px+)" },
+    tabletLandscape: { type: "text" as const, label: "Tablet Landscape (1024px)" },
+    tabletPortrait: { type: "text" as const, label: "Tablet Portrait (768px)" },
+    mobileLandscape: { type: "text" as const, label: "Mobile Landscape (480px)" },
+    mobilePortrait: { type: "text" as const, label: "Mobile Portrait (320px)" },
   },
 });
 
@@ -155,7 +166,7 @@ const colorSchema = (label: string) => ({
 
 // ── Registry ──
 
-export const REGISTRY: ComponentRegistry = new Map([
+export const RAW_REGISTRY = new Map<string, any>([
   // ══════════════════════════════════════════════
   // LAYOUT
   // ══════════════════════════════════════════════
@@ -753,13 +764,36 @@ export const REGISTRY: ComponentRegistry = new Map([
           "split",
         ]),
         brand: {
-          type: "object",
+          type: "object" as const,
           label: "Brand",
           subfields: {
             name: textSchema("Name"),
             logo: textSchema("Logo URL"),
             description: textSchema("Description"),
           },
+        },
+        columns: {
+          type: "array" as const,
+          label: "Columns",
+          arrayFields: {
+            title: textSchema("Column Title"),
+            links: {
+              type: "array" as const,
+              label: "Links",
+              arrayFields: {
+                label: textSchema("Link Label"),
+                href: textSchema("Link URL"),
+              }
+            }
+          }
+        },
+        socialLinks: {
+          type: "array" as const,
+          label: "Social Links",
+          arrayFields: {
+            icon: selectSchema("Network Icon", ["Facebook", "Twitter", "Instagram", "Linkedin", "Github", "Youtube", "Mail"]),
+            href: textSchema("URL"),
+          }
         },
         copyright: textSchema("Copyright Text"),
       },
@@ -873,6 +907,16 @@ export const REGISTRY: ComponentRegistry = new Map([
         columns: numberSchema("Columns", 1, 6),
         heading: textSchema("Heading"),
         subheading: textSchema("Subheading"),
+        items: {
+          type: "array" as const,
+          label: "Testimonial Items",
+          arrayFields: {
+            quote: { type: "textarea" as const, label: "Quote" },
+            author: { type: "text" as const, label: "Author" },
+            avatar: { type: "text" as const, label: "Avatar URL" },
+            rating: { type: "number" as const, label: "Rating", min: 1, max: 5 },
+          }
+        }
       },
       keywords: [
         "testimonials",
@@ -904,6 +948,33 @@ export const REGISTRY: ComponentRegistry = new Map([
         subheading: textSchema("Subheading"),
         showPeriod: booleanSchema("Show Period"),
         currency: textSchema("Currency Symbol"),
+        plans: {
+          type: "array" as const,
+          label: "Pricing Plans",
+          arrayFields: {
+            name: { type: "text" as const, label: "Plan Name" },
+            price: { type: "text" as const, label: "Price" },
+            period: { type: "text" as const, label: "Billing Period" },
+            description: { type: "textarea" as const, label: "Description" },
+            highlighted: { type: "boolean" as const, label: "Highlight Plan (Most Popular)" },
+            cta: {
+              type: "object" as const,
+              label: "CTA Button",
+              subfields: {
+                label: textSchema("Label"),
+                href: textSchema("Link URL"),
+              }
+            },
+            features: {
+              type: "array" as const,
+              label: "Features List",
+              arrayFields: {
+                label: { type: "text" as const, label: "Feature Description" },
+                enabled: { type: "boolean" as const, label: "Enabled" },
+              }
+            }
+          }
+        }
       },
       keywords: [
         "pricing",
@@ -928,6 +999,14 @@ export const REGISTRY: ComponentRegistry = new Map([
         heading: textSchema("Heading"),
         subheading: textSchema("Subheading"),
         searchable: booleanSchema("Searchable"),
+        items: {
+          type: "array" as const,
+          label: "FAQ Items",
+          arrayFields: {
+            question: { type: "text" as const, label: "Question" },
+            answer: { type: "textarea" as const, label: "Answer" },
+          }
+        }
       },
       keywords: [
         "faq",
@@ -1785,6 +1864,14 @@ export const REGISTRY: ComponentRegistry = new Map([
         brandName: textSchema("Brand Name"),
         sticky: booleanSchema("Sticky Header"),
         transparent: booleanSchema("Transparent Background"),
+        links: {
+          type: "array" as const,
+          label: "Menu Links",
+          arrayFields: {
+            label: { type: "text" as const, label: "Link Label" },
+            href: { type: "text" as const, label: "Link URL" },
+          }
+        }
       },
       keywords: ["nav", "navbar", "header", "menu", "megamenu"],
     },
@@ -1875,23 +1962,265 @@ export const REGISTRY: ComponentRegistry = new Map([
   ],
 ]);
 
+// ── Registry Mapping and Namespacing ──
+import { FeatureGrid, Gallery, ProductShowcase, DiscountBanner } from "../ui/mockups";
+
+export const REGISTRY = new Map<string, RegistryEntry>();
+
+function getNamespacedId(name: string, domain: string): string {
+  if (name === "FeatureGrid") return "layout.feature-grid";
+  if (name === "Gallery") return "media.gallery";
+  if (name === "ProductShowcase") return "commerce.product-showcase";
+  if (name === "DiscountBanner") return "marketing.discount-banner";
+
+  const slug = name.replace(/([a-z])([A-Z])/g, "$1-$2")
+                   .replace(/[\s_]+/g, "-")
+                   .toLowerCase();
+
+  return `${domain.toLowerCase()}.${slug}`;
+}
+
+function getDomainFromCategory(category?: string, fallback: string = "core", componentName?: string): string {
+  if (componentName === "Navbar" || componentName === "Hero" || componentName === "Footer") {
+    return "core";
+  }
+
+  switch (category?.toLowerCase()) {
+    case "layout":
+      return "layout";
+    case "media":
+    case "animation":
+      return "media";
+    case "marketing":
+      return "marketing";
+    case "commerce":
+      return "commerce";
+    case "forms":
+      return "forms";
+    case "buttons":
+    case "typography":
+    case "navigation":
+    case "overlay":
+    case "dashboard":
+    case "builder":
+      return "core";
+    default:
+      return fallback;
+  }
+}
+
+function getBuilderPanel(category?: string, entry?: any, componentName?: string): string {
+  if (entry?.builder?.panel) {
+    return entry.builder.panel;
+  }
+
+  if (componentName === "Navbar") {
+    return "Navigation";
+  }
+
+  if (componentName === "Hero" || componentName === "Footer") {
+    return "Core";
+  }
+
+  if (category?.toLowerCase() === "commerce") {
+    return "Storefront";
+  }
+
+  return category || "Core";
+}
+
+// 1. Add Mockups to RAW_REGISTRY so they get mapped together
+RAW_REGISTRY.set("FeatureGrid", {
+  component: FeatureGrid,
+  label: "Feature Grid",
+  category: "Layout",
+  description: "Structured features overview boxes.",
+  defaultProps: {
+    title: "Enterprise Core Features",
+    items: "Fast Delivery, Secure Payments, 24/7 Support, Premium Quality",
+  },
+  schema: {
+    title: textSchema("Title"),
+    items: { type: "textarea", label: "Items" },
+  },
+  keywords: ["feature", "grid", "services", "mockup"],
+});
+
+RAW_REGISTRY.set("Gallery", {
+  component: Gallery,
+  label: "Gallery",
+  category: "Media",
+  description: "Visual storefront grid lookbook.",
+  defaultProps: {
+    items: "Lookbook Alpha, Lookbook Beta, Lookbook Gamma, Lookbook Delta",
+  },
+  schema: {
+    items: { type: "textarea", label: "Items" },
+  },
+  keywords: ["gallery", "lookbook", "mockup", "images"],
+});
+
+RAW_REGISTRY.set("ProductShowcase", {
+  component: ProductShowcase,
+  label: "Product Showcase",
+  category: "Commerce",
+  description: "Single product details selector block.",
+  defaultProps: {
+    productId: "p_1",
+    titleOverride: "Summer Cotton Hoodie",
+    showPrice: true,
+    accentColor: "#6366F1",
+  },
+  schema: {
+    productId: textSchema("Product ID"),
+    titleOverride: textSchema("Title Override"),
+    showPrice: booleanSchema("Show Price"),
+    accentColor: colorSchema("Accent Colour"),
+  },
+  keywords: ["product", "showcase", "mockup", "store"],
+});
+
+RAW_REGISTRY.set("DiscountBanner", {
+  component: DiscountBanner,
+  label: "Discount Banner",
+  category: "Commerce",
+  description: "Promo discount code notification block.",
+  defaultProps: {
+    code: "KlinSummer30",
+    percentOff: 30,
+    theme: "dark",
+  },
+  schema: {
+    code: textSchema("Promo Code"),
+    percentOff: numberSchema("Percent Off"),
+    theme: selectSchema("Theme", ["dark", "light"]),
+  },
+  keywords: ["discount", "banner", "promo", "mockup", "coupon"],
+});
+
+// Universal layout and styling properties
+const universalFields = {
+  // Layout properties
+  width: textSchema("Width"),
+  height: textSchema("Height"),
+  minHeight: textSchema("Min Height"),
+  maxWidth: textSchema("Max Width"),
+  align: selectSchema("Alignment", ["left", "center", "right", "justify"]),
+  padding: responsiveProp("Padding"),
+  margin: responsiveProp("Margin"),
+  position: selectSchema("Position", ["static", "relative", "absolute", "fixed", "sticky"]),
+  overflow: selectSchema("Overflow", ["visible", "hidden", "scroll", "auto"]),
+  zIndex: numberSchema("Z-Index"),
+  sticky: booleanSchema("Sticky"),
+  containerWidth: selectSchema("Container Width", ["full", "contained", "wide", "narrow"]),
+
+  // Styling properties
+  bgColor: colorSchema("Background Colour"),
+  bgImage: textSchema("Background Image URL"),
+  bgType: selectSchema("Background Type", ["solid", "gradient", "image", "video"]),
+  bgGradient: textSchema("Background Gradient"),
+  borderColor: colorSchema("Border Colour"),
+  borderWidth: textSchema("Border Width"),
+  borderStyle: selectSchema("Border Style", ["none", "solid", "dashed", "dotted"]),
+  radius: selectSchema("Border Radius", ["none", "sm", "md", "lg", "xl", "full"]),
+  shadow: selectSchema("Shadow", ["none", "sm", "md", "lg", "xl"]),
+  opacity: numberSchema("Opacity", 0, 1),
+  blur: textSchema("Blur Filter"),
+};
+
+// 2. Loop and construct canonical namespaced registry entries
+RAW_REGISTRY.forEach((entry, key) => {
+  const legacyCategory = entry.category;
+  const domain = entry.domain ?? getDomainFromCategory(legacyCategory, key === "Navbar" || key === "Hero" || key === "Footer" ? "core" : "layout", key);
+  const id = getNamespacedId(key, domain);
+
+  const orderMap: Record<string, number> = {
+    "core.navbar": 1,
+    "core.hero": 2,
+    "layout.feature-grid": 3,
+    "media.gallery": 4,
+    "marketing.testimonials": 5,
+    "marketing.pricing": 6,
+    "marketing.faq": 7,
+    "marketing.cta": 8,
+    "core.footer": 9,
+    "commerce.product-showcase": 10,
+    "commerce.product-grid": 11,
+    "marketing.discount-banner": 12,
+  };
+
+  const iconMap: Record<string, string> = {
+    "core.navbar": "Menu",
+    "core.hero": "Monitor",
+    "layout.feature-grid": "Grid",
+    "media.gallery": "Image",
+    "marketing.testimonials": "MessageSquare",
+    "marketing.pricing": "Tag",
+    "marketing.faq": "HelpCircle",
+    "marketing.cta": "Play",
+    "core.footer": "Download",
+    "commerce.product-showcase": "ShoppingBag",
+    "commerce.product-grid": "LayoutGrid",
+    "marketing.discount-banner": "Percent",
+  };
+
+  const registryEntry: RegistryEntry = {
+    id,
+    component: entry.component,
+    label: entry.label,
+    domain,
+    subcategory: entry.subcategory,
+    description: entry.description,
+    defaultProps: entry.defaultProps,
+    schema: { ...entry.schema, ...universalFields },
+    editable: entry.editable,
+    deletable: entry.deletable,
+    nesting: entry.nesting,
+    keywords: entry.keywords,
+    thumbnail: entry.thumbnail,
+    builder: {
+      visible: true,
+      draggable: true,
+      panel: getBuilderPanel(legacyCategory, entry, key),
+      icon: iconMap[id] || "Box",
+      order: orderMap[id] || 100,
+      ...((entry as any).builder || {})
+    }
+  };
+  REGISTRY.set(id, registryEntry);
+});
+
 // ── Exports ──
 
 /** Get all entries in a given category */
 export function getEntriesByCategory(category: string): RegistryEntry[] {
-  return Array.from(REGISTRY.entries())
-    .filter(([, entry]) => entry.category === category)
-    .map(([, entry]) => entry);
+  return Array.from(REGISTRY.values())
+    .filter((entry) => entry.builder?.panel === category || entry.domain === category);
 }
 
 /** Get all unique category names */
 export function getCategories(): string[] {
   const cats = new Set<string>();
-  REGISTRY.forEach((entry) => cats.add(entry.category));
+  REGISTRY.forEach((entry) => {
+    if (entry.builder?.panel) {
+      cats.add(entry.builder.panel);
+    } else {
+      cats.add(entry.domain);
+    }
+  });
   return Array.from(cats);
 }
 
-/** Get entry by component name */
-export function getEntry(name: string): RegistryEntry | undefined {
-  return REGISTRY.get(name);
+/** Get entry by component ID or name */
+export function getEntry(idOrName: string): RegistryEntry | undefined {
+  return REGISTRY.get(idOrName) || Array.from(REGISTRY.values()).find(e => e.id === idOrName || e.label === idOrName);
 }
+
+export { normalizePuckData } from "./normalize";
+export { REGISTRY_VERSION } from "./version";
+export { BindingRegistry } from "./BindingRegistry";
+export type { DataBindingVariable } from "./BindingRegistry";
+export { Registry } from "./api";
+
+
+

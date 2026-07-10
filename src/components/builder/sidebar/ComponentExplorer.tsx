@@ -1,15 +1,16 @@
 import React from "react";
-import { ComponentRegistry } from "../../../packages/registry/ComponentRegistry";
-import { Box, Monitor, Menu, Grid, Image, MessageSquare, Tag, HelpCircle, Play, Download, ShoppingBag, LayoutGrid, Percent } from "lucide-react";
+import { Registry } from "../../../../packages/registry";
+import { Box, Monitor, Menu, Grid, Image, MessageSquare, Tag, HelpCircle, Play, Download, ShoppingBag, LayoutGrid, Percent, Sparkles, FormInput, Activity } from "lucide-react";
 
 export function ComponentExplorer() {
-  const components = ComponentRegistry.getComponents();
+  // Retrieve all drag-and-drop enabled components from the Component Registry using the Registry API
+  const components = Registry.getBuilderComponents();
 
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData("text/plain", JSON.stringify({ type, component: type }));
   };
 
-  const getLucideIcon = (name: string) => {
+  const getLucideIcon = (name?: string) => {
     switch (name) {
       case "Monitor": return Monitor;
       case "Menu": return Menu;
@@ -23,6 +24,9 @@ export function ComponentExplorer() {
       case "ShoppingBag": return ShoppingBag;
       case "LayoutGrid": return LayoutGrid;
       case "Percent": return Percent;
+      case "Sparkles": return Sparkles;
+      case "FormInput": return FormInput;
+      case "Activity": return Activity;
       default: return Box;
     }
   };
@@ -34,18 +38,18 @@ export function ComponentExplorer() {
         <p className="text-[10px] text-[#0F1020]/50 mt-0.5">Drag blocks onto the canvas area to build.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 max-h-[600px] overflow-y-auto pr-1">
         {components.map((c) => {
-          const Icon = getLucideIcon(c.icon);
+          const Icon = getLucideIcon(c.builder?.icon);
           return (
             <div
-              key={c.type}
+              key={c.id}
               draggable
-              onDragStart={(e) => handleDragStart(e, c.type)}
+              onDragStart={(e) => handleDragStart(e, c.id)}
               className="p-3 bg-white border border-black/5 hover:border-black/10 hover:shadow-sm rounded-xl cursor-grab transition active:cursor-grabbing flex flex-col items-center justify-between h-20 text-center select-none"
             >
               <Icon className="h-4.5 w-4.5 text-[#0F1020]/60 mt-1" />
-              <span className="text-[10px] font-bold text-[#0F1020]/80 tracking-wide font-sans">{c.name}</span>
+              <span className="text-[10px] font-bold text-[#0F1020]/80 tracking-wide font-sans line-clamp-1">{c.label}</span>
             </div>
           );
         })}
@@ -53,3 +57,4 @@ export function ComponentExplorer() {
     </div>
   );
 }
+export default ComponentExplorer;

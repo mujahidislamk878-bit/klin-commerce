@@ -134,6 +134,102 @@ router.post("/websites/wizard-create", authenticateToken as any, async (req: Aut
   }
 });
 
+// POST /api/websites/install
+router.post("/websites/install", authenticateToken as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const userEmail = req.user?.email || "anonymous";
+    const { templateId } = req.body;
+
+    if (!templateId) {
+      return res.status(400).json({ success: false, error: "Template ID is required" });
+    }
+
+    const db = await getDatabase();
+
+    // Fetch template details
+    let template: any = null;
+    try {
+      const { ObjectId } = require("mongodb");
+      template = await db.collection("templates").findOne({ _id: new ObjectId(templateId) });
+    } catch (e) {}
+
+    if (!template) {
+      template = await db.collection("templates").findOne({ templateId });
+    }
+    if (!template) {
+      template = await db.collection("templates").findOne({ name: templateId });
+    }
+    if (!template) {
+      template = await db.collection("templates").findOne({}); // Fallback
+    }
+
+    if (!template) {
+      return res.status(404).json({ success: false, error: "Template not found" });
+    }
+
+    const websiteId = `web_${Math.random().toString(36).substring(2, 11)}`;
+
+    const clonedWebsite = {
+      websiteId,
+      userId,
+      workspaceId: `workspace_${userId}`,
+      name: `My ${template.name}`,
+      templateName: template.name,
+      templateId: template.templateId || template.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      templateVersion: template.version || "1.0.0",
+      websiteVersion: "1.0.0",
+      updatesAvailable: false,
+      assetNamespace: `cloudinary/website_${websiteId}/`,
+      status: "Draft",
+      lastEdited: new Date(),
+      createdAt: new Date(),
+      theme: template.theme || {
+        colors: { primary: "#0F1020", secondary: "#FAFBFC", accent: "#6366F1", background: "#ffffff", foreground: "#0F1020" },
+        radii: { sm: "4px", md: "12px", lg: "24px" },
+        fonts: { body: "Inter", heading: "Outfit" },
+        shadows: { sm: "0 4px 20px rgba(0,0,0,0.05)" }
+      },
+      pages: template.pages || [],
+      navigation: template.navigation || [],
+      seo: {
+        title: template.seo?.title || template.name,
+        description: template.seo?.description || `Ecommerce store built with Klin.`,
+        keywords: template.seo?.keywords || ["ecommerce", "klin"],
+      },
+      metadata: {
+        businessName: `My ${template.name}`,
+        websiteName: `My ${template.name}`,
+        websiteDescription: `Ecommerce store built with Klin.`,
+        industry: "Retail",
+        supportEmail: userEmail,
+        supportPhone: "",
+        socialLinks: {},
+        logo: "",
+        favicon: "",
+      },
+      settings: {
+        subdomain: `site-${Math.random().toString(36).substring(2, 6)}`,
+        customDomain: "",
+        localization: {
+          currency: "USD",
+          language: "en",
+          timezone: "UTC",
+        },
+        themeStyle: "modern",
+      },
+    };
+
+    await db.collection("websites").insertOne(clonedWebsite);
+    await logWebsiteActivity(websiteId, "Website Created", `Website created from template '${template.name}' directly.`, userEmail);
+    await logWebsiteActivity(websiteId, "Template Installed", `Template '${template.name}' installed.`, userEmail);
+
+    res.json({ success: true, website: clonedWebsite });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to install template" });
+  }
+});
+
 // POST /api/websites/:id/settings/:section
 router.post("/websites/:id/settings/:section", authenticateToken as any, async (req: AuthenticatedRequest, res: Response) => {
   try {

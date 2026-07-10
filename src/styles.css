@@ -150,3 +150,17 @@
   display: none !important;
 }
 
+/* Force Puck's default built-in sidebars, outlines, and inspectors to remain completely hidden */
+.custom-puck-editor [class*="Sidebar"],
+.custom-puck-editor [class*="sidebar"],
+.custom-puck-editor [class*="Outline"],
+.custom-puck-editor [class*="outline"],
+.custom-puck-editor [class*="Inspector"],
+.custom-puck-editor [class*="inspector"] {
+  display: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
