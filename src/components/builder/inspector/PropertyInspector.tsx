@@ -218,7 +218,8 @@ export function PropertyInspector() {
   const { 
     state: editorState, 
     updateProperty, 
-    toggleLockNode 
+    toggleLockNode,
+    setLayoutMode
   } = useEditorCore();
 
   const [activeTab, setActiveTab] = React.useState<string>("Properties");
@@ -594,6 +595,20 @@ export function PropertyInspector() {
         <span className="px-2 py-0.5 bg-neutral-100 rounded-md text-[9px] font-mono text-neutral-500 font-bold uppercase select-none">
           Active
         </span>
+      </div>
+
+      {/* Layout Mode Selector (Safe / Advanced / Pro) */}
+      <div className="px-6 py-2.5 bg-neutral-50/50 border-b border-black/5 flex items-center justify-between text-xs select-none">
+        <span className="font-semibold text-neutral-500 font-sans">Layout Mode</span>
+        <select
+          value={editorState.layoutMode}
+          onChange={(e) => setLayoutMode(e.target.value as any)}
+          className="bg-white border border-black/10 rounded px-2 py-1 text-[10px] font-bold focus:outline-none"
+        >
+          <option value="safe">Safe Mode</option>
+          <option value="advanced">Advanced Mode</option>
+          <option value="pro">Pro Mode</option>
+        </select>
       </div>
 
       {/* 9 Tabs Visual Switcher */}

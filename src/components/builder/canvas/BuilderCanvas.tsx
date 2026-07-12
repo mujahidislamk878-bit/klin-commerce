@@ -3,6 +3,7 @@ import { Puck, createUsePuck } from "@measured/puck";
 import { puckConfigBuilder } from "../../../lib/puck-config-builder";
 import { useBuilder } from "../core/BuilderContext";
 import { useEditorCore } from "../core/EditorCore";
+import { CompositionEngine } from "../../../runtime/resolvers/CompositionEngine";
 import { BuilderRuntime } from "../core/BuilderRuntime";
 import { 
   Copy, 
@@ -251,6 +252,13 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
       const dragData = JSON.parse(dataStr);
       const type = dragData.type || dragData.component;
       if (!type) return;
+
+      // Validate dropped component placement using the Composition Engine
+      const validation = CompositionEngine.validatePlacement(type, null);
+      if (!validation.allowed) {
+        alert(`✕ Drop Rejected:\n${validation.reason}\n\n💡 Suggestion: ${validation.suggestion}`);
+        return;
+      }
 
       const canvasEl = e.currentTarget;
 

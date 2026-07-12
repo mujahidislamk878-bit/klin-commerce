@@ -113,6 +113,25 @@ export interface RegistryEntry<T = any> {
     icon?: string;
     order?: number;
   };
+  capabilities?: {
+    acceptsChildren?: boolean;
+    supportsSlots?: boolean;
+    supportsAbsolutePosition?: boolean;
+    supportsVariants?: boolean;
+    supportsInlineEditing?: boolean;
+    supportsResponsive?: boolean;
+    supportsAnimations?: boolean;
+    supportsVisibilityRules?: boolean;
+    lockable?: boolean;
+  };
+  compatibility?: {
+    accepts?: string[];
+    rejects?: string[];
+  };
+  slots?: Record<string, {
+    accepts?: string[];
+    rejects?: string[];
+  }>;
 }
 
 export type ComponentRegistry = Map<string, RegistryEntry<any>>;
@@ -182,6 +201,15 @@ export const RAW_REGISTRY = new Map<string, any>([
         variant: "default",
         width: "contained",
       },
+      capabilities: {
+        acceptsChildren: true,
+        supportsAbsolutePosition: true,
+        lockable: true,
+        supportsResponsive: true
+      },
+      compatibility: {
+        rejects: ["Navbar", "Footer", "Checkout"]
+      },
       schema: {
         padding: responsiveProp("Padding"),
         variant: selectSchema("Variant", [
@@ -234,6 +262,11 @@ export const RAW_REGISTRY = new Map<string, any>([
       category: "Layout",
       description: "A centred content wrapper with optional max-width",
       defaultProps: { maxWidth: "1280px" },
+      capabilities: {
+        acceptsChildren: true,
+        lockable: true,
+        supportsResponsive: true
+      },
       schema: {
         maxWidth: textSchema("Max Width"),
         paddingX: booleanSchema("Horizontal Padding"),
@@ -250,6 +283,15 @@ export const RAW_REGISTRY = new Map<string, any>([
       category: "Layout",
       description: "CSS grid layout with responsive columns and gap control",
       defaultProps: { columns: 3, gap: "md" },
+      capabilities: {
+        acceptsChildren: true,
+        lockable: true,
+        supportsResponsive: true
+      },
+      compatibility: {
+        accepts: ["Card", "Container", "Product", "Image", "Button", "Text"],
+        rejects: ["Navbar", "Footer", "Checkout"]
+      },
       schema: {
         columns: {
           type: "object",
@@ -537,6 +579,14 @@ export const RAW_REGISTRY = new Map<string, any>([
       category: "Buttons",
       description: "Action button with multiple variants and sizes",
       defaultProps: { variant: "primary", size: "md", children: "Button" },
+      capabilities: {
+        acceptsChildren: true,
+        lockable: true
+      },
+      compatibility: {
+        accepts: ["Icon", "Text"],
+        rejects: ["Button", "Form", "Hero", "Section"]
+      },
       schema: {
         children: textSchema("Label"),
         variant: selectSchema("Variant", [
@@ -704,6 +754,27 @@ export const RAW_REGISTRY = new Map<string, any>([
         variant: "default",
         heading: "Hero Title",
         subheading: "Supporting text goes here",
+      },
+      capabilities: {
+        acceptsChildren: true,
+        supportsSlots: true,
+        supportsAbsolutePosition: true,
+        lockable: true
+      },
+      compatibility: {
+        accepts: ["Heading", "Text", "Button", "Badge", "Countdown", "Rating", "Video", "ProductCard", "Newsletter", "Image"],
+        rejects: ["Navbar", "Footer", "Checkout", "Cart"]
+      },
+      slots: {
+        content: {
+          accepts: ["Heading", "Text", "Countdown", "Button", "Rating"]
+        },
+        media: {
+          accepts: ["Image", "Video", "Carousel"]
+        },
+        decorations: {
+          accepts: ["SVG", "Shape", "FloatingBadge"]
+        }
       },
       schema: {
         heading: textSchema("Heading"),
@@ -2178,6 +2249,9 @@ RAW_REGISTRY.forEach((entry, key) => {
     nesting: entry.nesting,
     keywords: entry.keywords,
     thumbnail: entry.thumbnail,
+    capabilities: (entry as any).capabilities,
+    compatibility: (entry as any).compatibility,
+    slots: (entry as any).slots,
     builder: {
       visible: true,
       draggable: true,

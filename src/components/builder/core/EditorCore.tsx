@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { useBuilder } from "./BuilderContext";
+import { CompositionEngine, LayoutMode } from "../../../runtime/resolvers/CompositionEngine";
 
 export interface EditorCoreState {
   selectedNodeId: string | null;
@@ -11,6 +12,7 @@ export interface EditorCoreState {
   activeBreakpoint: "desktop" | "tabletLandscape" | "tabletPortrait" | "mobileLandscape" | "mobilePortrait";
   activeTheme: string;
   activePage: string;
+  layoutMode: LayoutMode;
 }
 
 export interface EditorCoreContextType {
@@ -26,6 +28,7 @@ export interface EditorCoreContextType {
   setContextMenu: (menu: { x: number; y: number; nodeId: string } | null) => void;
   setBreakpoint: (bp: "desktop" | "tabletLandscape" | "tabletPortrait" | "mobileLandscape" | "mobilePortrait") => void;
   updateProperty: (nodeId: string, path: string[], val: any, activeState?: string, activeTab?: string) => void;
+  setLayoutMode: (mode: LayoutMode) => void;
 }
 
 const EditorCoreContext = createContext<EditorCoreContextType | null>(null);
@@ -55,6 +58,7 @@ export function EditorCoreProvider({ children }: { children: React.ReactNode }) 
   const [dragState, setDragState] = useState<any | null>(null);
   const [breakpoint, setBreakpointState] = useState<EditorCoreState["activeBreakpoint"]>("desktop");
   const [activeTheme, setActiveTheme] = useState<string>("default");
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>("safe");
 
   const selectNode = (nodeId: string | null, isMulti?: boolean) => {
     if (isMulti && nodeId) {
@@ -201,6 +205,11 @@ export function EditorCoreProvider({ children }: { children: React.ReactNode }) 
     setPuckData({ ...puckData, content: nextContent });
   };
 
+  const setLayoutMode = (mode: LayoutMode) => {
+    setLayoutModeState(mode);
+    CompositionEngine.setMode(mode);
+  };
+
   const state: EditorCoreState = {
     selectedNodeId,
     multiSelection,
@@ -210,7 +219,8 @@ export function EditorCoreProvider({ children }: { children: React.ReactNode }) 
     dragState,
     activeBreakpoint: breakpoint,
     activeTheme,
-    activePage: activePageSlug
+    activePage: activePageSlug,
+    layoutMode
   };
 
   const value: EditorCoreContextType = {
@@ -225,7 +235,8 @@ export function EditorCoreProvider({ children }: { children: React.ReactNode }) 
     toggleHideNode,
     setContextMenu,
     setBreakpoint,
-    updateProperty
+    updateProperty,
+    setLayoutMode
   };
 
   return (
