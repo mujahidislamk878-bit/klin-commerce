@@ -1,5 +1,6 @@
 import React from "react";
 import { useBuilder } from "../core/BuilderContext";
+import { useEditorCore } from "../core/EditorCore";
 import { Registry } from "../../../../packages/registry";
 import { ControlFactory } from "./ControlFactory";
 import { 
@@ -20,7 +21,16 @@ import {
   Database,
   Palette,
   Play,
-  Sparkle
+  Sparkle,
+  Compass,
+  FileImage,
+  Eye,
+  EyeOff,
+  Link,
+  Save,
+  ShieldAlert,
+  Edit,
+  ArrowRightLeft
 } from "lucide-react";
 
 interface FlattenedField {
@@ -31,6 +41,7 @@ interface FlattenedField {
   options?: any[];
   arrayFields?: Record<string, any>;
   originalKey: string;
+  permissions?: "editable" | "readOnly" | "hidden" | "locked" | "templateOnly";
   ai?: {
     editable?: boolean;
     description?: string;
@@ -39,14 +50,6 @@ interface FlattenedField {
 
 function getNestedProperty(obj: any, path: string[]): any {
   return path.reduce((acc, part) => acc?.[part], obj);
-}
-
-function updateNestedProperty(obj: any, path: string[], value: any): any {
-  if (path.length === 0) return value;
-  const newObj = Array.isArray(obj) ? [...obj] : { ...obj };
-  const [head, ...tail] = path;
-  newObj[head] = updateNestedProperty(obj[head], tail, value);
-  return newObj;
 }
 
 function parseSpacingString(val: string): { top: string; right: string; bottom: string; left: string } {
@@ -99,6 +102,7 @@ function flattenSchema(schema: Record<string, any>, defaultProps: any = {}, pref
         options: field.options,
         originalKey: key,
         arrayFields: field.arrayFields || field.subfields,
+        permissions: field.permissions || "editable"
       });
     } else {
       let type = field.type || "text";
@@ -130,6 +134,7 @@ function flattenSchema(schema: Record<string, any>, defaultProps: any = {}, pref
         default: fieldDefault,
         options: field.options,
         originalKey: key,
+        permissions: field.permissions || "editable",
         ai: {
           editable: true,
           description: `Visual property ${fieldLabel} for layout generation`,
@@ -209,18 +214,39 @@ export function SpacingBoxEditor({
 }
 
 export function PropertyInspector() {
-  const { puckData, selectedNodeId, setPuckData } = useBuilder();
+  const { puckData, selectedNodeId } = useBuilder();
+  const { 
+    state: editorState, 
+    updateProperty, 
+    toggleLockNode 
+  } = useEditorCore();
+
   const [activeTab, setActiveTab] = React.useState<string>("Properties");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [activeState, setActiveState] = React.useState<string>("Default");
-  const [lockedProps, setLockedProps] = React.useState<Record<string, boolean>>({});
   const [favoriteProps, setFavoriteProps] = React.useState<Record<string, boolean>>({});
+  
+  // Binding configurations state
+  const [activeBindings, setActiveBindings] = React.useState<Record<string, { type: string; path: string }>>({});
+  
+  // Custom Variants presets
+  const [savedVariants, setSavedVariants] = React.useState<Record<string, any>>({});
+  const [newVariantName, setNewVariantName] = React.useState<string>("");
+
+  // Asset manager upload mocks
+  const [mockAssets, setMockAssets] = React.useState<any[]>([
+    { id: "img1", name: "Modern Office Workspace", url: "https://images.unsplash.com/photo-1497366216548-37526070297c", alt: "Office lobby workspace" },
+    { id: "img2", name: "Minimalist Linen Shirts Grid", url: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b", alt: "Folded clothing wardrobe" },
+    { id: "img3", name: "Premium Leather Shoes", url: "https://images.unsplash.com/photo-1549298916-b41d501d3772", alt: "Brown dress boots" },
+  ]);
+  const [newAltText, setNewAltText] = React.useState<string>("");
+
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     Spacing: true,
     Sizing: true,
-    Fill: true,
-    Borders: true,
-    Effects: true,
+    Fills: true,
+    Stroke: true,
+    Settings: true,
     General: true,
   });
 
@@ -235,20 +261,40 @@ export function PropertyInspector() {
     );
   }
 
-  const getTabbedFields = (flattened: FlattenedField[]) => {
+  const getTabbedFields = (flattenedFields: FlattenedField[], registryEntry: any) => {
     const tabs: Record<string, FlattenedField[]> = {
       Properties: [],
       Layout: [],
+      Position: [],
       Style: [],
+      Assets: [],
       Data: [],
       Theme: [],
       Animation: [],
       Advanced: [],
     };
 
-    flattened.forEach((field) => {
+    // Explicit custom metadata-driven mapping configured in Registry schemas:
+    const customTabs = registryEntry?.inspector?.tabs;
+
+    flattenedFields.forEach((field) => {
       const lowercaseKey = field.originalKey.toLowerCase();
       
+      if (customTabs) {
+        let mapped = false;
+        Object.entries(customTabs).forEach(([tabName, keys]: [string, any]) => {
+          if (Array.isArray(keys) && keys.includes(field.originalKey)) {
+            const camelTab = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            if (tabs[camelTab]) {
+              tabs[camelTab].push(field);
+              mapped = true;
+            }
+          }
+        });
+        if (mapped) return;
+      }
+
+      // Fallback auto-categorizer:
       if (
         lowercaseKey === "id" ||
         lowercaseKey === "aria" ||
@@ -256,6 +302,19 @@ export function PropertyInspector() {
         lowercaseKey === "locked"
       ) {
         tabs.Advanced.push(field);
+      }
+      else if (
+        lowercaseKey === "position" ||
+        lowercaseKey === "overflow" ||
+        lowercaseKey === "zindex" ||
+        lowercaseKey === "sticky" ||
+        lowercaseKey === "top" ||
+        lowercaseKey === "bottom" ||
+        lowercaseKey === "left" ||
+        lowercaseKey === "right" ||
+        lowercaseKey === "display"
+      ) {
+        tabs.Position.push(field);
       }
       else if (
         lowercaseKey === "width" ||
@@ -266,12 +325,25 @@ export function PropertyInspector() {
         lowercaseKey === "align" ||
         lowercaseKey === "padding" ||
         lowercaseKey === "margin" ||
-        lowercaseKey === "position" ||
-        lowercaseKey === "overflow" ||
-        lowercaseKey === "zindex" ||
-        lowercaseKey === "sticky"
+        lowercaseKey === "gap" ||
+        lowercaseKey === "flex" ||
+        lowercaseKey === "grid"
       ) {
         tabs.Layout.push(field);
+      }
+      else if (
+        lowercaseKey === "image" ||
+        lowercaseKey === "video" ||
+        lowercaseKey === "src" ||
+        lowercaseKey === "icon" ||
+        lowercaseKey === "logo" ||
+        lowercaseKey === "svg" ||
+        lowercaseKey === "font" ||
+        lowercaseKey === "file" ||
+        lowercaseKey === "alt" ||
+        lowercaseKey.includes("url")
+      ) {
+        tabs.Assets.push(field);
       }
       else if (
         lowercaseKey === "bgcolor" ||
@@ -329,30 +401,30 @@ export function PropertyInspector() {
     if (tabName === "Layout") {
       if (key === "padding" || key === "margin") return "Spacing";
       if (key === "width" || key === "height" || key === "minheight" || key === "maxwidth" || key === "containerwidth") return "Sizing";
-      return "Alignment & Positioning";
+      return "Flex & Grid Grids";
     }
     
     if (tabName === "Style") {
-      if (key.includes("bg") || key.includes("color") || key.includes("colour")) return "Fill";
-      if (key.includes("border") || key === "radius") return "Borders";
-      return "Effects";
+      if (key.includes("bg") || key.includes("color") || key.includes("colour")) return "Fills";
+      if (key.includes("border") || key === "radius") return "Stroke";
+      return "Effects & Style Filters";
     }
     
     if (tabName === "Advanced") {
-      if (key === "customcss") return "Custom CSS";
-      if (key === "id" || key.includes("aria")) return "Attributes & ARIA";
+      if (key === "customcss") return "Custom CSS Layout";
+      if (key === "id" || key.includes("aria")) return "Attributes & Accessibility";
       return "Developer View";
     }
     
-    return "General";
+    return "General Settings";
   };
 
   const entry = Registry.get(selectedNode.type);
   const defaultProps = entry?.defaultProps || {};
   const flattened = flattenSchema(entry?.schema || {}, defaultProps);
-  const tabbedFields = getTabbedFields(flattened);
+  const tabbedFields = getTabbedFields(flattened, entry);
 
-  // Filter fields inside active tab based on search query
+  // Filter fields based on search query
   const activeFields = (tabbedFields[activeTab] || []).filter((field) => 
     field.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -366,31 +438,10 @@ export function PropertyInspector() {
   });
 
   const handlePropChange = (path: string[], val: any) => {
-    const propKey = path.join(".");
-    if (lockedProps[propKey]) return; // locked
+    const isLocked = selectedNode.props?.locked;
+    if (isLocked) return; // frozen node
 
-    const nextContent = (puckData?.content || []).map((node: any) => {
-      if (node.props?.id === selectedNodeId) {
-        // If state is Hover and style field, write to states.hover namespace
-        if (activeState === "Hover" && activeTab === "Style") {
-          const hoverPath = ["states", "hover", ...path];
-          const nextProps = updateNestedProperty(node.props, hoverPath, val);
-          return { ...node, props: nextProps };
-        }
-        
-        const nextProps = updateNestedProperty(node.props, path, val);
-        return {
-          ...node,
-          props: nextProps,
-        };
-      }
-      return node;
-    });
-    setPuckData({ ...puckData, content: nextContent });
-  };
-
-  const togglePropLock = (propKey: string) => {
-    setLockedProps(prev => ({ ...prev, [propKey]: !prev[propKey] }));
+    updateProperty(selectedNode.props.id, path, val, activeState, activeTab);
   };
 
   const togglePropFavorite = (propKey: string) => {
@@ -398,7 +449,38 @@ export function PropertyInspector() {
   };
 
   const triggerAISuggestion = (field: FlattenedField) => {
-    alert(`[AI Suggestion] Recommended values for ${field.label}: Use Theme Primary and default padding scales for optimal layout contrast.`);
+    alert(`[AI Suggestion] Recommended values for ${field.label}: Use Theme Accent and default layout scales for optimal contrast.`);
+  };
+
+  // Variant manager triggers
+  const handleSaveVariant = () => {
+    if (!newVariantName.trim()) return;
+    setSavedVariants(prev => ({
+      ...prev,
+      [newVariantName]: { ...selectedNode.props }
+    }));
+    alert(`✓ Saved variant configuration as "${newVariantName}"`);
+    setNewVariantName("");
+  };
+
+  const handleApplyVariant = (varName: string) => {
+    const val = savedVariants[varName];
+    if (val) {
+      Object.entries(val).forEach(([k, v]) => {
+        if (k !== "id") handlePropChange([k], v);
+      });
+    }
+  };
+
+  const handleMockUpload = () => {
+    const name = prompt("Enter asset name:", "Shopify Promo Banner");
+    const url = prompt("Enter asset image URL:", "https://images.unsplash.com/photo-1542291026-7eec264c27ff");
+    if (name && url) {
+      setMockAssets(prev => [
+        ...prev,
+        { id: `asset-${Math.random().toString(36).substr(2, 5)}`, name, url, alt: "New clothing catalog image" }
+      ]);
+    }
   };
 
   const renderArrayBuilder = (field: FlattenedField) => {
@@ -490,7 +572,9 @@ export function PropertyInspector() {
   const TABS = [
     { id: "Properties", icon: FileText },
     { id: "Layout", icon: Layout },
+    { id: "Position", icon: Compass },
     { id: "Style", icon: Sparkles },
+    { id: "Assets", icon: FileImage },
     { id: "Data", icon: Database },
     { id: "Theme", icon: Palette },
     { id: "Animation", icon: Play },
@@ -512,7 +596,7 @@ export function PropertyInspector() {
         </span>
       </div>
 
-      {/* Reusable Visual Tab Switcher */}
+      {/* 9 Tabs Visual Switcher */}
       <div className="flex border-b border-black/5 bg-neutral-50/50 p-1 gap-0.5 overflow-x-auto scrollbar-none select-none">
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -522,7 +606,7 @@ export function PropertyInspector() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               title={tab.id}
-              className={`p-2 flex-1 flex flex-col items-center gap-1 rounded-lg text-[9px] font-sans font-semibold transition active:scale-95 ${
+              className={`p-2 flex-1 flex flex-col items-center gap-1 rounded-lg text-[9px] font-sans font-semibold transition active:scale-95 shrink-0 ${
                 isActive 
                   ? "bg-white text-indigo-600 shadow-sm border border-black/5 font-bold" 
                   : "text-neutral-400 hover:text-neutral-600"
@@ -566,107 +650,309 @@ export function PropertyInspector() {
         </div>
       )}
 
-      {/* Render Active Panels and Groups */}
+      {/* Inspector Performance Rules: Conditional DOM Mounting per active tab */}
       <div className="flex-1 overflow-y-auto">
-        {Object.keys(grouped).length === 0 ? (
-          <div className="text-xs text-neutral-400 font-semibold text-center py-10 font-sans">
-            No properties found in this panel.
+        
+        {/* properties Tab Custom Variants block */}
+        {activeTab === "Properties" && (
+          <div className="px-6 py-4 border-b border-black/5 space-y-3 bg-neutral-50/30 text-xs">
+            <h4 className="font-bold text-[10px] text-[#0F1020]/60 uppercase tracking-widest flex items-center gap-1.5">
+              <ArrowRightLeft className="h-3.5 w-3.5" /> Variant Manager
+            </h4>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Variant Preset Name..." 
+                value={newVariantName}
+                onChange={(e) => setNewVariantName(e.target.value)}
+                className="flex-1 px-2.5 py-1 bg-white rounded-lg border border-black/10 text-xs focus:outline-none"
+              />
+              <button 
+                onClick={handleSaveVariant}
+                className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+              >
+                Save
+              </button>
+            </div>
+            
+            {Object.keys(savedVariants).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1.5">
+                {Object.keys(savedVariants).map((varName) => (
+                  <button 
+                    key={varName}
+                    onClick={() => handleApplyVariant(varName)}
+                    className="px-2.5 py-1 bg-white rounded-lg border border-black/5 hover:border-indigo-500 font-mono text-[9px]"
+                  >
+                    Apply: {varName}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          Object.entries(grouped).map(([groupName, groupFields]) => {
-            const isOpen = openGroups[groupName] ?? true;
+        )}
 
-            return (
-              <div key={groupName} className="border-b border-black/5">
-                <button
-                  onClick={() => setOpenGroups({ ...openGroups, [groupName]: !isOpen })}
-                  className="w-full px-6 py-3.5 flex justify-between items-center bg-neutral-50/50 hover:bg-neutral-50 transition text-left select-none"
+        {/* ASSETS TAB PANEL */}
+        {activeTab === "Assets" && (
+          <div className="p-6 space-y-5 text-xs text-left">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-[10px] text-[#0F1020]/60 uppercase tracking-widest">Library Images & Icons</h4>
+              <button 
+                onClick={handleMockUpload}
+                className="px-2.5 py-1 bg-black text-white rounded-lg text-[10px] font-semibold hover:bg-neutral-800 transition"
+              >
+                Upload Asset
+              </button>
+            </div>
+
+            {/* Asset Picker List */}
+            <div className="grid grid-cols-2 gap-3.5">
+              {mockAssets.map((asset) => (
+                <div 
+                  key={asset.id}
+                  onClick={() => {
+                    handlePropChange(["image"], asset.url);
+                    handlePropChange(["src"], asset.url);
+                    setNewAltText(asset.alt);
+                    alert(`✓ Asset selected and URL bound to component image fields!`);
+                  }}
+                  className="bg-white rounded-xl border border-black/5 p-2 shadow-sm cursor-pointer hover:border-indigo-500 transition group select-none relative"
                 >
-                  <span className="text-[10px] font-bold text-[#0F1020]/75 tracking-wider uppercase font-sans">
-                    {groupName}
-                  </span>
-                  {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-neutral-400" /> : <ChevronDown className="h-3.5 w-3.5 text-neutral-400" />}
-                </button>
+                  <img src={asset.url} alt={asset.name} className="h-16 w-full object-cover rounded-lg mb-1.5" />
+                  <p className="font-sans font-semibold text-[9px] text-neutral-600 truncate">{asset.name}</p>
+                </div>
+              ))}
+            </div>
 
-                {isOpen && (
-                  <div className="px-6 py-4 space-y-4 bg-white">
-                    {groupFields.map((field) => {
-                      const propKey = field.path.join(".");
-                      const isLocked = lockedProps[propKey];
-                      const isFavorite = favoriteProps[propKey];
+            {/* Asset Editing overrides */}
+            <div className="border-t border-black/5 pt-4 space-y-3">
+              <h5 className="font-bold text-[10px] text-neutral-400 uppercase tracking-wider">Alt text Override</h5>
+              <input 
+                type="text"
+                placeholder="Image alt description..."
+                value={newAltText}
+                onChange={(e) => {
+                  setNewAltText(e.target.value);
+                  handlePropChange(["alt"], e.target.value);
+                }}
+                className="w-full px-3 py-2 bg-neutral-50 rounded-xl border border-black/5 text-xs focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
 
-                      if (field.type === "array") {
-                        return <React.Fragment key={field.label}>{renderArrayBuilder(field)}</React.Fragment>;
-                      }
+        {/* DATA BINDINGS ENGINE TAB */}
+        {activeTab === "Data" && (
+          <div className="p-6 space-y-5 text-xs text-left">
+            <div>
+              <h4 className="font-bold text-[10px] text-[#0F1020]/60 uppercase tracking-widest">Binding Variable Engine</h4>
+              <p className="text-[10px] text-neutral-400 mt-0.5">Map component fields to dynamic database collection settings.</p>
+            </div>
 
-                      // Render Visual Box spacing layout editor if Spacing property matches
-                      if (activeTab === "Layout" && groupName === "Spacing" && (field.originalKey === "padding" || field.originalKey === "margin")) {
-                        const val = getNestedProperty(selectedNode.props, field.path) ?? field.default;
-                        const spacingString = typeof val === "object" ? (val.desktop || "0px") : val || "0px";
-                        return (
-                          <div key={field.label} className="relative group/spacing">
-                            <SpacingBoxEditor 
-                              label={field.label}
-                              value={spacingString}
-                              onChange={(nextSpacing) => handlePropChange(field.path, nextSpacing)}
-                            />
-                            {/* Visual Locks and favorites overlay */}
-                            <div className="absolute right-0 top-0 flex gap-1 select-none">
-                              <button onClick={() => togglePropLock(propKey)} title="Lock Property">
-                                {isLocked ? <Lock className="h-3 w-3 text-red-500" /> : <Unlock className="h-3 w-3 text-neutral-300 hover:text-neutral-500" />}
-                              </button>
-                              <button onClick={() => togglePropFavorite(propKey)} title="Pin to Favorites">
-                                <Star className={`h-3 w-3 ${isFavorite ? "text-yellow-500 fill-yellow-500" : "text-neutral-300 hover:text-yellow-500"}`} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      }
+            <div className="space-y-4">
+              {["title", "heading", "subheading", "badge", "quote"].map((propKey) => {
+                const binding = activeBindings[propKey] || { type: "Manual", path: "" };
 
-                      // Fetch value with Hover state overrides if editing Hover Style
-                      let val = getNestedProperty(selectedNode.props, field.path) ?? field.default;
-                      if (activeState === "Hover" && activeTab === "Style") {
-                        val = getNestedProperty(selectedNode.props, ["states", "hover", ...field.path]) ?? val;
-                      }
+                const handleBindingTypeChange = (type: string) => {
+                  const updated = { ...binding, type };
+                  setActiveBindings(prev => ({ ...prev, [propKey]: updated }));
+                  if (type === "Manual") {
+                    handlePropChange([propKey], "Sample Content Title");
+                  } else {
+                    handlePropChange([propKey], `{{ ${type.toLowerCase()}.${propKey} }}`);
+                  }
+                };
 
+                return (
+                  <div key={propKey} className="p-3 bg-neutral-50/50 rounded-xl border border-black/5 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold font-mono text-[10px] text-neutral-500 uppercase">{propKey} Field</span>
+                      <select
+                        value={binding.type}
+                        onChange={(e) => handleBindingTypeChange(e.target.value)}
+                        className="bg-white border border-black/10 rounded px-1.5 py-0.5 text-[9px] font-semibold focus:outline-none"
+                      >
+                        <option value="Manual">Manual</option>
+                        <option value="Theme Token">Theme Token</option>
+                        <option value="CMS">CMS Bind</option>
+                        <option value="Commerce">Commerce Bind</option>
+                        <option value="Expression">JS Expression</option>
+                      </select>
+                    </div>
+
+                    {binding.type !== "Manual" && (
+                      <input 
+                        type="text"
+                        placeholder="Path reference e.g. products.0.title"
+                        value={binding.path}
+                        onChange={(e) => {
+                          const updated = { ...binding, path: e.target.value };
+                          setActiveBindings(prev => ({ ...prev, [propKey]: updated }));
+                        }}
+                        className="w-full px-2.5 py-1 bg-white rounded-lg border border-black/10 text-[10px] font-mono focus:outline-none"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* EVENT SYSTEM OPTIONS & TRIGGERS PANEL */}
+        {activeTab === "Animation" && (
+          <div className="p-6 border-b border-black/5 space-y-4 text-xs text-left">
+            <h4 className="font-bold text-[10px] text-[#0F1020]/60 uppercase tracking-widest flex items-center gap-1.5 select-none">
+              <Link className="h-3.5 w-3.5" /> Interactive Event Triggers
+            </h4>
+            
+            <div className="space-y-3.5">
+              {["OnClick", "OnHover", "OnScroll"].map((evt) => {
+                const savedAction = selectedNode.props?.events?.[evt] || { action: "none", target: "" };
+
+                const handleActionChange = (action: string) => {
+                  const events = selectedNode.props?.events || {};
+                  handlePropChange(["events", evt], { ...savedAction, action });
+                };
+
+                const handleTargetChange = (target: string) => {
+                  const events = selectedNode.props?.events || {};
+                  handlePropChange(["events", evt], { ...savedAction, target });
+                };
+
+                return (
+                  <div key={evt} className="p-3 bg-neutral-50/50 rounded-xl border border-black/5 space-y-2">
+                    <div className="flex justify-between items-center select-none">
+                      <span className="font-semibold text-neutral-600">{evt}</span>
+                      <select
+                        value={savedAction.action}
+                        onChange={(e) => handleActionChange(e.target.value)}
+                        className="bg-white border border-black/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none"
+                      >
+                        <option value="none">No Action</option>
+                        <option value="link">Open URL Link</option>
+                        <option value="scroll">Scroll to Section</option>
+                        <option value="cart">Add to Cart</option>
+                      </select>
+                    </div>
+
+                    {savedAction.action !== "none" && (
+                      <input 
+                        type="text"
+                        placeholder="Link URL or Section ID target..."
+                        value={savedAction.target}
+                        onChange={(e) => handleTargetChange(e.target.value)}
+                        className="w-full px-2.5 py-1 bg-white rounded-lg border border-black/10 text-[10px] focus:outline-none"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* RENDER STANDARD FIELDS GROUPINGS IF NOT ASSETS/DATA/THEME PANELS */}
+        {activeTab !== "Assets" && activeTab !== "Data" && Object.entries(grouped).map(([groupName, groupFields]) => {
+          const isOpen = openGroups[groupName] ?? true;
+
+          return (
+            <div key={groupName} className="border-b border-black/5">
+              <button
+                onClick={() => setOpenGroups({ ...openGroups, [groupName]: !isOpen })}
+                className="w-full px-6 py-3.5 flex justify-between items-center bg-neutral-50/50 hover:bg-neutral-50 transition text-left select-none"
+              >
+                <span className="text-[10px] font-bold text-[#0F1020]/75 tracking-wider uppercase font-sans">
+                  {groupName}
+                </span>
+                {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-neutral-400" /> : <ChevronDown className="h-3.5 w-3.5 text-neutral-400" />}
+              </button>
+
+              {isOpen && (
+                <div className="px-6 py-4 space-y-4 bg-white">
+                  {groupFields.map((field) => {
+                    const propKey = field.path.join(".");
+                    const isLocked = selectedNode.props?.locked;
+                    const isFavorite = favoriteProps[propKey];
+                    const permission = field.permissions || "editable";
+
+                    // Check Permission rules
+                    if (permission === "hidden") return null; // do not render
+                    const isReadOnly = permission === "readOnly";
+                    const isLockedProp = permission === "locked";
+
+                    if (field.type === "array") {
+                      return <React.Fragment key={field.label}>{renderArrayBuilder(field)}</React.Fragment>;
+                    }
+
+                    // Render Visual Box spacing layout editor if Spacing property matches
+                    if (activeTab === "Layout" && groupName === "Spacing" && (field.originalKey === "padding" || field.originalKey === "margin")) {
+                      const val = getNestedProperty(selectedNode.props, field.path) ?? field.default;
+                      const spacingString = typeof val === "object" ? (val.desktop || "0px") : val || "0px";
                       return (
-                        <div key={field.label} className="relative space-y-1">
-                          {/* Property Actions Overlays */}
-                          <div className="flex justify-between items-center select-none pr-1">
-                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">
-                              {isLocked && "[LOCKED]"}
-                            </span>
-                            <div className="flex gap-1.5 items-center">
-                              <button onClick={() => triggerAISuggestion(field)} title="AI Suggestion" className="text-neutral-300 hover:text-indigo-500">
-                                <Sparkle className="h-3 w-3" />
-                              </button>
-                              <button onClick={() => togglePropLock(propKey)} title="Lock Property">
-                                {isLocked ? <Lock className="h-3 w-3 text-red-500" /> : <Unlock className="h-3 w-3 text-neutral-300 hover:text-neutral-500" />}
-                              </button>
-                              <button onClick={() => togglePropFavorite(propKey)} title="Pin to Favorites">
-                                <Star className={`h-3 w-3 ${isFavorite ? "text-yellow-500 fill-yellow-500" : "text-neutral-300 hover:text-yellow-500"}`} />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className={isLocked ? "pointer-events-none opacity-50" : ""}>
-                            <ControlFactory
-                              type={field.type}
-                              label={field.label}
-                              value={val}
-                              options={field.options}
-                              onChange={(nextVal) => handlePropChange(field.path, nextVal)}
-                            />
+                        <div key={field.label} className="relative group/spacing">
+                          <SpacingBoxEditor 
+                            label={field.label}
+                            value={spacingString}
+                            onChange={(nextSpacing) => handlePropChange(field.path, nextSpacing)}
+                          />
+                          {/* Visual Locks and favorites overlay */}
+                          <div className="absolute right-0 top-0 flex gap-1 select-none">
+                            <button onClick={() => toggleLockNode(selectedNode.props.id)} title="Lock Property">
+                              {isLocked ? <Lock className="h-3 w-3 text-red-500" /> : <Unlock className="h-3 w-3 text-neutral-300 hover:text-neutral-500" />}
+                            </button>
+                            <button onClick={() => togglePropFavorite(propKey)} title="Pin to Favorites">
+                              <Star className={`h-3 w-3 ${isFavorite ? "text-yellow-500 fill-yellow-500" : "text-neutral-300 hover:text-yellow-500"}`} />
+                            </button>
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
+                    }
+
+                    // Fetch value with Hover state overrides if editing Hover Style
+                    let val = getNestedProperty(selectedNode.props, field.path) ?? field.default;
+                    if (activeState === "Hover" && activeTab === "Style") {
+                      val = getNestedProperty(selectedNode.props, ["states", "hover", ...field.path]) ?? val;
+                    }
+
+                    return (
+                      <div key={field.label} className="relative space-y-1">
+                        {/* Property Actions Overlays */}
+                        <div className="flex justify-between items-center select-none pr-1">
+                          <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide flex items-center gap-1">
+                            {isReadOnly && <ShieldAlert className="h-3 w-3 text-orange-400" />}
+                            {isReadOnly && "READ-ONLY"}
+                            {isLockedProp && "LOCKED FIELD"}
+                          </span>
+                          <div className="flex gap-1.5 items-center">
+                            <button onClick={() => triggerAISuggestion(field)} title="AI Suggestion" className="text-neutral-300 hover:text-indigo-500">
+                              <Sparkle className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => toggleLockNode(selectedNode.props.id)} title="Lock Property">
+                              {isLocked ? <Lock className="h-3 w-3 text-red-500" /> : <Unlock className="h-3 w-3 text-neutral-300 hover:text-neutral-500" />}
+                            </button>
+                            <button onClick={() => togglePropFavorite(propKey)} title="Pin to Favorites">
+                              <Star className={`h-3 w-3 ${isFavorite ? "text-yellow-500 fill-yellow-500" : "text-neutral-300 hover:text-yellow-500"}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={(isLocked || isReadOnly || isLockedProp) ? "pointer-events-none opacity-50" : ""}>
+                          <ControlFactory
+                            type={field.type}
+                            label={field.label}
+                            value={val}
+                            options={field.options}
+                            onChange={(nextVal) => handlePropChange(field.path, nextVal)}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </aside>
   );

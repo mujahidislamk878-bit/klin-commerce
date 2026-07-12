@@ -2,6 +2,7 @@ import React from "react";
 import { Puck, createUsePuck } from "@measured/puck";
 import { puckConfigBuilder } from "../../../lib/puck-config-builder";
 import { useBuilder } from "../core/BuilderContext";
+import { useEditorCore } from "../core/EditorCore";
 import { BuilderRuntime } from "../core/BuilderRuntime";
 import { 
   Copy, 
@@ -100,15 +101,22 @@ const PuckHelper = ({ setPuckDispatch, setPuckDataState }: PuckHelperProps) => {
 };
 
 export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange: (next: any) => void }) {
-  const { setSelectedNodeId, selectedNodeId, setPuckData } = useBuilder();
+  const { setSelectedNodeId, selectedNodeId } = useBuilder();
+  const { 
+    state: editorState, 
+    selectNode, 
+    copyStyle, 
+    pasteStyle, 
+    duplicateNode, 
+    deleteNode, 
+    toggleLockNode, 
+    setContextMenu 
+  } = useEditorCore();
+
   const [puckDispatch, setPuckDispatch] = React.useState<any>(null);
   const [puckDataState, setPuckDataState] = React.useState<any>(null);
   const isInternalChangeRef = React.useRef(false);
 
-  // Context Menu state
-  const [contextMenu, setContextMenu] = React.useState<{ x: number; y: number; nodeId: string } | null>(null);
-  // Style Clipboard state
-  const [styleClipboard, setStyleClipboard] = React.useState<any>(null);
   // Text Selection Mini-Toolbar state
   const [textToolbar, setTextToolbar] = React.useState<{ x: number; y: number; text: string } | null>(null);
 
@@ -228,7 +236,7 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
     };
     window.addEventListener("click", handleClose);
     return () => window.removeEventListener("click", handleClose);
-  }, []);
+  }, [setContextMenu]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -289,106 +297,9 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
         puckDispatch({ type: "setData", data: nextData });
       }
       onChange(nextData);
-      setSelectedNodeId(newId);
+      selectNode(newId);
     } catch (err) {
       console.error("Drop handling failed", err);
-    }
-  };
-
-  // Context Menu triggers
-  const handleDuplicateNode = (nodeId: string) => {
-    const idx = puckData.content.findIndex((node: any) => node.props?.id === nodeId);
-    if (idx !== -1) {
-      const source = puckData.content[idx];
-      const copy = {
-        ...source,
-        props: {
-          ...source.props,
-          id: `node-${Math.random().toString(36).substr(2, 9)}`,
-        }
-      };
-      const nextContent = [...puckData.content];
-      nextContent.splice(idx + 1, 0, copy);
-      const nextData = { ...puckData, content: nextContent };
-      setPuckData(nextData);
-      onChange(nextData);
-    }
-  };
-
-  const handleLockToggleNode = (nodeId: string) => {
-    const nextContent = puckData.content.map((node: any) => {
-      if (node.props?.id === nodeId) {
-        const isLocked = node.props?.locked;
-        return {
-          ...node,
-          props: { ...node.props, locked: !isLocked }
-        };
-      }
-      return node;
-    });
-    const nextData = { ...puckData, content: nextContent };
-    setPuckData(nextData);
-    onChange(nextData);
-  };
-
-  const handleCopyStyleNode = (nodeId: string) => {
-    const target = puckData.content.find((node: any) => node.props?.id === nodeId);
-    if (target) {
-      const stylesToCopy = {
-        width: target.props?.width,
-        height: target.props?.height,
-        minHeight: target.props?.minHeight,
-        maxWidth: target.props?.maxWidth,
-        align: target.props?.align,
-        padding: target.props?.padding,
-        margin: target.props?.margin,
-        position: target.props?.position,
-        overflow: target.props?.overflow,
-        zIndex: target.props?.zIndex,
-        sticky: target.props?.sticky,
-        containerWidth: target.props?.containerWidth,
-        bgColor: target.props?.bgColor,
-        bgImage: target.props?.bgImage,
-        bgType: target.props?.bgType,
-        bgGradient: target.props?.bgGradient,
-        borderColor: target.props?.borderColor,
-        borderWidth: target.props?.borderWidth,
-        borderStyle: target.props?.borderStyle,
-        radius: target.props?.radius,
-        shadow: target.props?.shadow,
-        opacity: target.props?.opacity,
-        blur: target.props?.blur,
-      };
-      setStyleClipboard(stylesToCopy);
-    }
-  };
-
-  const handlePasteStyleNode = (nodeId: string) => {
-    if (!styleClipboard) return;
-    const nextContent = puckData.content.map((node: any) => {
-      if (node.props?.id === nodeId) {
-        return {
-          ...node,
-          props: {
-            ...node.props,
-            ...styleClipboard,
-          }
-        };
-      }
-      return node;
-    });
-    const nextData = { ...puckData, content: nextContent };
-    setPuckData(nextData);
-    onChange(nextData);
-  };
-
-  const handleDeleteNode = (nodeId: string) => {
-    const nextContent = puckData.content.filter((node: any) => node.props?.id !== nodeId);
-    const nextData = { ...puckData, content: nextContent };
-    setPuckData(nextData);
-    onChange(nextData);
-    if (selectedNodeId === nodeId) {
-      setSelectedNodeId(null);
     }
   };
 
@@ -419,31 +330,31 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
             const selectedItem = (appState as any).selectedItem || getSelectedItem(itemSelector, puckData.content);
             const nextSelectedId = selectedItem?.props?.id || selectedItem?.id || null;
             if (nextSelectedId !== selectedNodeId) {
-              setSelectedNodeId(nextSelectedId);
+              selectNode(nextSelectedId);
             }
           } else if (selectedNodeId !== null) {
-            setSelectedNodeId(null);
+            selectNode(null);
           }
         }}
         overrides={overrides}
       />
 
       {/* Floating Canvas Context Menu */}
-      {contextMenu && (
+      {editorState.contextMenu && (
         <div 
           onClick={(e) => e.stopPropagation()}
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          style={{ left: editorState.contextMenu.x, top: editorState.contextMenu.y }}
           className="absolute z-50 bg-[#0F1020] text-white p-2.5 rounded-xl shadow-2xl border border-white/10 flex flex-col min-w-[140px] text-xs font-semibold select-none divide-y divide-white/5 animate-in fade-in zoom-in-95 duration-100"
         >
           <div className="py-1">
             <button 
-              onClick={() => { handleDuplicateNode(contextMenu.nodeId); setContextMenu(null); }}
+              onClick={() => { duplicateNode(editorState.contextMenu!.nodeId); setContextMenu(null); }}
               className="w-full text-left px-2.5 py-1.5 hover:bg-white/10 rounded-lg flex items-center gap-2"
             >
               <Copy className="h-3 w-3" /> Duplicate
             </button>
             <button 
-              onClick={() => { handleLockToggleNode(contextMenu.nodeId); setContextMenu(null); }}
+              onClick={() => { toggleLockNode(editorState.contextMenu!.nodeId); setContextMenu(null); }}
               className="w-full text-left px-2.5 py-1.5 hover:bg-white/10 rounded-lg flex items-center gap-2"
             >
               <Lock className="h-3 w-3 text-red-400" /> Lock / Unlock
@@ -452,14 +363,14 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
           
           <div className="py-1">
             <button 
-              onClick={() => { handleCopyStyleNode(contextMenu.nodeId); setContextMenu(null); }}
+              onClick={() => { copyStyle(editorState.contextMenu!.nodeId); setContextMenu(null); }}
               className="w-full text-left px-2.5 py-1.5 hover:bg-white/10 rounded-lg flex items-center gap-2"
             >
               <Copy className="h-3 w-3" /> Copy Style
             </button>
             <button 
-              disabled={!styleClipboard}
-              onClick={() => { handlePasteStyleNode(contextMenu.nodeId); setContextMenu(null); }}
+              disabled={!editorState.clipboard}
+              onClick={() => { pasteStyle(editorState.contextMenu!.nodeId); setContextMenu(null); }}
               className="w-full text-left px-2.5 py-1.5 hover:bg-white/10 rounded-lg flex items-center gap-2 disabled:opacity-40"
             >
               <Clipboard className="h-3 w-3" /> Paste Style
@@ -468,7 +379,7 @@ export function BuilderCanvas({ puckData, onChange }: { puckData: any; onChange:
 
           <div className="py-1">
             <button 
-              onClick={() => { handleDeleteNode(contextMenu.nodeId); setContextMenu(null); }}
+              onClick={() => { deleteNode(editorState.contextMenu!.nodeId); setContextMenu(null); }}
               className="w-full text-left px-2.5 py-1.5 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg flex items-center gap-2"
             >
               <Trash2 className="h-3 w-3" /> Delete
