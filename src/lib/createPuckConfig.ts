@@ -79,7 +79,45 @@ export function createPuckConfig(options: CreatePuckConfigOptions = {}): Config<
       defaultProps: entry.defaultProps || {},
       render: (props: any) => {
         const Component = entry.component;
-        const { showBorder, editMode, puck, ...cleanProps } = props;
+        const {
+          showBorder,
+          editMode,
+          puck,
+
+          // Universal Layout props
+          width,
+          height,
+          minHeight,
+          maxWidth,
+          align,
+          position,
+          overflow,
+          zIndex,
+          sticky,
+          containerWidth,
+          padding,
+          margin,
+
+          // Universal Styling props
+          bgColor,
+          bgImage,
+          bgType,
+          bgGradient,
+          borderColor,
+          borderWidth,
+          borderStyle,
+          radius,
+          shadow,
+          opacity,
+          blur,
+
+          // Custom extra props
+          locked,
+          hidden,
+          events,
+
+          ...cleanProps
+        } = props;
 
         // Resolve universal style and layout props into an inline styles object
         const styles: React.CSSProperties = {};
